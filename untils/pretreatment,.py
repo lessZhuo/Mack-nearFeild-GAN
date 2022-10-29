@@ -268,18 +268,22 @@ def center_crop(numpy_data, f, l):
 
 
 def corp(data, len):
-    rowLen = data.shape[0]
-    co
+    # 1.获取数据的长度和宽度
+    rowLength = data.shape[0]
+    colLength = data.shape[1]
+    # 2.根据要拆分的数据进行切分
+    # 分为5部分，左上，右上，左下，右下
     data_left_up = data[:len,:len]
-    data_left_down = data[:len, :len]
-    data_right_up = data[:len, :len]
-    data_right_down = data[:len, :len]
+    data_left_down = data[len:, :len]
+    data_right_up = data[:len, len:]
+    data_right_down = data[len:, :len:]
+    data_mid = data[rowLength/2-len/2:rowLength/2+len/2,colLength/2-len/2:colLength/2+len/2]
 
-    return data
+    return data_left_up,data_left_down,data_right_up,data_right_down,data_mid
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-BASE_DIR = r'F:\JZJ\data\近场数据\RECT_ARRAY_MASK'
-BASE_DIR1 = r"F:\JZJ\data\近场数据\RECT_ARRAY_NF_x0_y0"
+BASE_DIR = r'E:\QQfile\近场数据\RECT_ARRAY_MASK'
+BASE_DIR1 = r"E:\QQfile\近场数据\RECT_ARRAY_NF_x0_y0"
 if __name__ == "__main__":
     masks_path = read_file(BASE_DIR)
     labels_path = read_file(BASE_DIR1)
