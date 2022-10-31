@@ -48,8 +48,7 @@ class LoadDataset(Dataset):
         f = mask.shape[0]
         l = mask.shape[1]
 
-        np.rot90(mask,1)
-
+        np.rot90(mask, 1)
 
         label_xx_real = self.read_csv(label, f, l, 0)
         label_xx_imag = self.read_csv(label, f, l, 1)
@@ -271,15 +270,19 @@ def corp(data, len):
     # 1.获取数据的长度和宽度
     rowLength = data.shape[0]
     colLength = data.shape[1]
+    print(rowLength)
+    print(colLength)
     # 2.根据要拆分的数据进行切分
     # 分为5部分，左上，右上，左下，右下
-    data_left_up = data[:len,:len]
+    data_left_up = data[:len, :len]
     data_left_down = data[len:, :len]
     data_right_up = data[:len, len:]
     data_right_down = data[len:, :len:]
-    data_mid = data[rowLength/2-len/2:rowLength/2+len/2,colLength/2-len/2:colLength/2+len/2]
+    data_mid = data[int(rowLength / 2 - len / 2):int(rowLength / 2 + len / 2),
+               int(colLength / 2 - len / 2):int(colLength / 2 + len / 2)]
 
-    return data_left_up,data_left_down,data_right_up,data_right_down,data_mid
+    return data_left_up, data_left_down, data_right_up, data_right_down, data_mid
+
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 BASE_DIR = r'E:\QQfile\近场数据\RECT_ARRAY_MASK'
@@ -294,16 +297,20 @@ if __name__ == "__main__":
     masks, labels = zip(*c)
 
     for mask, label in c:
+        print("-----------------分割线---------------------------")
         mask = read_mask(mask)
 
         f = mask.shape[1]
         l = mask.shape[0]
-        print(mask.shape)
+        # print(mask.shape)
         label_xx_real = read_csv(label, f, l, 0)
         label_xx_imag = read_csv(label, f, l, 1)
         label_yy_real = read_csv(label, f, l, 2)
         label_yy_imag = read_csv(label, f, l, 3)
-        print(label_xx_real.shape)
+        # print(label_xx_real.shape)
+
+        # 256*256
+
         mask = center_crop(mask, f, l)
 
         label_xx_real = center_crop(label_xx_real, f, l)
@@ -311,18 +318,41 @@ if __name__ == "__main__":
         label_yy_real = center_crop(label_yy_real, f, l)
         label_yy_imag = center_crop(label_yy_imag, f, l)
 
-        # 256*256
+        # 128*128
+        # 切分mask数据为5个128*128的图片
+        # 根据位置进行保存
 
+        mask_left_up, mask_left_down, mask_right_up, mask_right_down, mask_mid = corp(mask, 128)
+        np.save("D:\dataset\A\RA_Mask_left_up_%i_%i" % (f, l), mask_left_up)
+        np.save("D:\dataset\A\RA_Mask_left_down_%i_%i" % (f, l), mask_left_down)
+        np.save("D:\dataset\A\RA_Mask_right_up_%i_%i" % (f, l), mask_right_up)
+        np.save("D:\dataset\A\RA_Mask_right_down_%i_%i" % (f, l), mask_right_down)
+        np.save("D:\dataset\A\RA_Mask_mask_mid_%i_%i" % (f, l), mask_mid)
 
-        print(mask.shape)
-        label = np.array([label_xx_real, label_xx_imag, label_yy_real, label_yy_imag])
-        print(label.shape)
+        # 切分各种类型的label
+        # 根据位置进行保存
 
-    # train = LoadDataset([BASE_DIR, BASE_DIR1], (256, 256), mode='train', split_n=0.8)
-    # train_data = DataLoader(train, batch_size=20, shuffle=True, num_workers=0)
-    # # print(train)
-    # for i, sample in enumerate(train_data):
-    #     # print(i, sample)
-    #     # 载入数据
-    #     img_data = Variable(sample['label'].to(device))
-    #     print(img_data.shape)
+        label_xx_real_left_up, label_xx_real_left_down, label_xx_real_right_up, label_xx_real_right_down, label_xx_real_mid = corp(
+            label_xx_real, 128)
+        label_xx_imag_left_up, label_xx_imag_left_down, label_xx_imag_right_up, label_xx_imag_right_down, label_xx_imag_mid = corp(
+            label_xx_imag, 128)
+        label_yy_real_left_up, label_yy_real_left_down, label_yy_real_right_up, label_yy_real_right_down, label_yy_real_mid = corp(
+            label_yy_real, 128)
+        label_yy_imag_left_up, label_yy_imag_left_down, label_yy_imag_right_up, label_yy_imag_right_down, label_yy_imag_mid = corp(
+            label_yy_imag, 128)
+
+        np.savez("D:\dataset\B\RA_NF_left_up_%i_%i" % (f, l), xx_real=label_xx_real_left_up,
+                 xx_imag=label_xx_imag_left_up, yy_real=label_yy_real_left_up, yy_imag=label_yy_imag_left_up)
+
+        np.savez("D:\dataset\B\RA_NF_left_down_%i_%i" % (f, l), xx_real=label_xx_real_left_down,
+                 xx_imag=label_xx_imag_left_down, yy_real=label_yy_real_left_down, yy_imag=label_yy_imag_left_down)
+
+        np.savez("D:\dataset\B\RA_NF_right_up_%i_%i" % (f, l), xx_real=label_xx_real_right_up,
+                 xx_imag=label_xx_imag_right_up, yy_real=label_yy_real_right_up, yy_imag=label_yy_imag_right_up)
+
+        np.savez("D:\dataset\B\RA_NF_right_down_%i_%i" % (f, l), xx_real=label_xx_real_right_down,
+                 xx_imag=label_xx_imag_right_down, yy_real=label_yy_real_right_down, yy_imag=label_yy_imag_right_down)
+
+        np.savez("D:\dataset\B\RA_NF_mid_%i_%i" % (f, l), xx_real=label_xx_real_mid,
+                 xx_imag=label_xx_imag_mid, yy_real=label_yy_real_mid, yy_imag=label_yy_imag_mid)
+
