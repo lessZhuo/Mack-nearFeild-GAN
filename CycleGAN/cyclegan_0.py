@@ -1,5 +1,5 @@
 import argparse
-import os
+
 import numpy as np
 import math
 import itertools
@@ -30,14 +30,14 @@ parser.add_argument("--decay_epoch", type=int, default=100, help="epoch from whi
 parser.add_argument("--n_cpu", type=int, default=2, help="number of cpu threads to use during batch generation")
 parser.add_argument("--img_height", type=int, default=256, help="size of image height")  # 256
 parser.add_argument("--img_width", type=int, default=256, help="size of image width")  # 256
-parser.add_argument("--channels", type=int, default=1, help="number of image channels")
 parser.add_argument("--sample_interval", type=int, default=100, help="interval between saving generator outputs")
 parser.add_argument("--checkpoint_interval", type=int, default=-1, help="interval between saving model checkpoints")
 parser.add_argument("--n_residual_blocks", type=int, default=9, help="number of residual blocks in generator")
 parser.add_argument("--lambda_cyc", type=float, default=10.0, help="cycle loss weight")
 parser.add_argument("--lambda_id", type=float, default=5.0, help="identity loss weight")
+parser.add_argument("--input_channels", type=int, default=1, help="number of input channels")
+parser.add_argument("--output_channels", type=int, default=2, help="number of image channels")
 opt = parser.parse_args()
-
 
 # Create sample and checkpoint directories
 # -------------------------------设置保存的数据和结果模型------------------------------------------------
@@ -51,13 +51,16 @@ criterion_identity = torch.nn.L1Loss()
 
 cuda = torch.cuda.is_available()
 Epoch = opt.n_epochs
-input_shape = (opt.channels, opt.img_height, opt.img_width)
+# ---------------------------关系到模型参数的设置------------------------------
+# 如果要设置合并起来计算 输出的通道必须设置为2，则为实部和虚部一起训练
+input_shape = (opt.input_channels, opt.img_height, opt.img_width)
+output_shape = (opt.output_channels, opt.img_height, opt.img_width)
 
 # Initialize generator and discriminator --- 网络模型
-G_AB = GeneratorResNet(input_shape, opt.n_residual_blocks)
-G_BA = GeneratorResNet(input_shape, opt.n_residual_blocks)
+G_AB = GeneratorResNet(input_shape, output_shape, opt.n_residual_blocks)
+G_BA = GeneratorResNet(output_shape, input_shape, opt.n_residual_blocks)
 D_A = Discriminator(input_shape)
-D_B = Discriminator(input_shape)
+D_B = Discriminator(output_shape)
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 criterion_Vail = torch.nn.MSELoss().to(device)
@@ -108,6 +111,9 @@ Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
 fake_A_buffer = ReplayBuffer()
 fake_B_buffer = ReplayBuffer()
 
+# save image and plot loss line
+image_save_plot = ImagePlotSave(output_shape,input_shape)
+
 # transformations
 transforms_ = [
     transforms.ToTensor(),
@@ -117,14 +123,15 @@ transforms_ = [
 
 # Training data loader
 dataloader = DataLoader(
-    MaskNfDataset("../dataset/train/%s" % opt.dataset_name, transforms_=transforms_,combine=True, direction="x"),
+    MaskNfDataset("../dataset/train/%s" % opt.dataset_name, transforms_=transforms_, combine=True, direction="x"),
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
 # Test data loader
 val_dataloader = DataLoader(
-    MaskNfDataset("../dataset/test/%s" % opt.dataset_name, transforms_=transforms_,mode="test", combine=True, direction="x"),
+    MaskNfDataset("../dataset/test/%s" % opt.dataset_name, transforms_=transforms_, mode="test", combine=True,
+                  direction="x"),
     batch_size=1,
     shuffle=True,
     num_workers=1,
@@ -134,95 +141,6 @@ val_dataloader = DataLoader(
 # now_time = datetime.datetime.now()
 # time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
 # log_dir = os.path.join("F:/JZJ/hello pytorch/My_Code", "results", time_str)
-
-# -------------------------------------设置图片保存方法---------------------------------
-# 先保存，可能最后要写进until里面
-def sample_images(batches_done):
-    """Saves a generated sample from the test set"""
-    imgs = next(iter(val_dataloader))
-    G_AB.eval()
-    G_BA.eval()
-    real_A = Variable(imgs["A"].type(Tensor))
-    fake_B = G_AB(real_A)
-    real_B = Variable(imgs["B"].type(Tensor))
-    fake_A = G_BA(real_B)
-    # Arange images along x-axis
-    r_A = make_grid(real_A, nrow=1, normalize=True)
-    r_B = make_grid(real_B, nrow=1, normalize=True)
-    f_A = make_grid(fake_A, nrow=1, normalize=True)
-    f_B = make_grid(fake_B, nrow=1, normalize=True)
-    # Arange images along y-axis
-    # image_grid = torch.cat((real_A, fake_B, real_B, fake_A), 1)
-    image_grid = torch.cat((r_A, f_B, r_B, f_A), 1)
-    # save_image(image_grid, "%s/%s.png" % ("F:/JZJ/hello pytorch/My_Code/results/time_str", batches_done), normalize=False)
-    image_grid = image_grid.cpu()  # .transpose(0, 3, 1, 2)
-    image_grid = image_grid[0, :, :].detach().numpy()  # [0, 0, :, :]
-    # image_grid = Image.fromarray(np.uint8(image_grid * 255)) #.convert('RGB')
-    # image_grid = np.array(image_grid)
-    plt.figure(figsize=(14, 14), dpi=300)
-
-    # y 轴不可见
-    # plt.gca().axes.get_yaxis().set_visible(False)
-    # fig, ax = plt.subplots()
-    # plt.gca().xaxis.set_major_locator(plt.NullLocator())
-    # plt.gca().yaxis.set_major_locator(plt.NullLocator())
-    # plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)  # 输出图像#边框设置
-    plt.imshow(image_grid)
-    # plt.axis('off')
-    plt.gca().xaxis.set_ticks_position('top')
-    plt.tick_params(labelsize=30)
-    # plt.show()
-    # ax = plt.subplot(111)
-    # ax.invert_yaxis()  # y轴反向
-    # ax.set_title('xx_real', fontsize=20)
-    plt.title('yy_real', fontsize=50, y=-0.1)
-    # plt.colorbar()  # fraction=0.05, pad=0.05
-    cb = plt.colorbar()  # fraction=0.05, pad=0.05
-    cb.ax.tick_params(labelsize=30)
-    # plt.savefig("%s/%s.tiff" % ("F:/JZJ/hello pytorch/My_Code/results/time_str", batches_done), bbox_inches='tight')
-    plt.savefig('%s/%i.png' % (log_dir, batches_done), bbox_inches='tight')
-    plt.close()
-
-
-def plot_line(train_x, train_y, valid_x, valid_y, valid_z, valid_k, train_m, train_n, mode, out_dir):
-    """
-    绘制训练和验证集的loss曲线/acc曲线
-    :param train_x: epoch
-    :param train_y: 标量值
-    :param valid_x:
-    :param valid_y:
-    :param mode:  'loss' or 'acc'
-    :param out_dir:
-    :return:
-    """
-    plt.figure(figsize=(14, 14), dpi=300)
-    plt.subplot(211)
-    plt.plot(train_x, train_y, label='lossG', color='b', marker='o', markerfacecolor='b', markersize=10)
-    plt.plot(valid_x, valid_y, label='lossD', color='r', marker='o', markerfacecolor='r', markersize=10)
-    # # plt.plot(valid_z, valid_k, label='Valid', fontsize=100)
-    #
-    # plt.ylabel(str(mode), fontsize=100)
-    # # plt.xlabel('Epoch', fontsize=100)
-    plt.tick_params(labelsize=30)
-    # # location = 'upper right' if mode == 'loss' else 'upper left'
-    plt.legend(loc='best', prop={'size': 30})
-    # # plt.gca().axes.get_xaxis().set_visible(False)
-    plt.title('yy_real loss', fontsize=30)
-
-    plt.subplot(212)
-
-    # plt.ylabel(str('Valid Loss'))
-    plt.xlabel('Epoch', fontsize=30)
-    # plt.title('Valid Loss', fontsize=10)
-    plt.plot(valid_z, valid_k, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=10)
-    plt.plot(train_m, train_n, label='Train', color='r', marker='o', markerfacecolor='r', markersize=10)
-    plt.tick_params(labelsize=30)
-    # location = 'upper right' if mode == 'loss' else 'upper left'
-    plt.legend(loc='best', prop={'size': 30})
-    # plt.gca().axes.get_xaxis().set_visible(True)
-    # plt.figure(figsize=(14, 14), dpi=300)
-    plt.savefig(os.path.join(out_dir, mode + '.tiff'))
-    plt.close()
 
 
 # ----------
@@ -270,7 +188,7 @@ if __name__ == '__main__':
             # 这个loss暂时考虑去掉，原本只是为了让生产的风格迁移图片色彩接近，而我们不需要
             # loss_identity = (loss_id_A + loss_id_B) / 2
 
-            #----------需要修改验证模型的格式 ----------
+            # ----------需要修改验证模型的格式 ----------
             # GAN loss
             fake_B = G_AB(real_A)
             loss_GAN_AB = criterion_GAN(D_B(fake_B), valid)
@@ -288,7 +206,7 @@ if __name__ == '__main__':
             loss_cycle = (loss_cycle_A + loss_cycle_B) / 2
 
             # Total loss
-            loss_G = loss_GAN + opt.lambda_cyc * loss_cycle # + opt.lambda_id * loss_identity
+            loss_G = loss_GAN + opt.lambda_cyc * loss_cycle  # + opt.lambda_id * loss_identity
             G_loss.append(loss_G.item())
             loss_G.backward()
             optimizer_G.step()
@@ -361,13 +279,15 @@ if __name__ == '__main__':
             # if batches_done % opt.sample_interval == 0:
             #     sample_images(batches_done)
 
-        # --------------
-        #  vail train Progress
-        # --------------
+            # --------------
+            #  vail train Progress
+            # --------------
 
-            net = G_AB.train()
+            net_G_AB = G_AB.train()
+            net_G_BA = G_BA.train()
 
-            fake_B = net(real_A)
+            fake_B = net_G_AB(real_A)
+            fake_A = net_G_AB(real_B)
 
             loss = criterion_Vail(fake_B, real_B)
             train_loss.append(loss.item())
@@ -377,7 +297,7 @@ if __name__ == '__main__':
 
             # If at sample interval save image
             if batches_done % opt.sample_interval == 0:
-                sample_images(batches_done)
+                image_save_plot.sample_images(batches_done,real_A,real_B,fake_A,fake_B)
         print("Epoch[{:0>3}/{:0>3}]  train_loss:{:.6f}".format(epoch, Epoch, train_mean))
 
         # --------------
@@ -408,7 +328,7 @@ if __name__ == '__main__':
         loss_rec["loss_valid"].append(eval_mean), loss_rec["loss_train"].append(train_mean)
 
         plt_x = np.arange(1, epoch + 2)
-        plot_line(plt_x, loss_rec["loss_G"], plt_x, loss_rec["loss_D"],
+        image_save_plot.plot_line(plt_x, loss_rec["loss_G"], plt_x, loss_rec["loss_D"],
                   plt_x, loss_rec["loss_valid"], plt_x, loss_rec["loss_train"], mode="loss", out_dir=log_dir)
         # plot_line(plt_x, loss_rec["loss_valid"], mode="xx_real loss", out_dir=log_dir)
 
@@ -417,27 +337,15 @@ if __name__ == '__main__':
         lr_scheduler_D_A.step()
         lr_scheduler_D_B.step()
 
-        # if opt.checkpoint_interval != -1 and epoch % opt.checkpoint_interval == 0:
-        # if epoch != -1:
-        #     # Save model checkpoints
-        #     torch.save(G_AB.state_dict(), 'F:/JZJ/hello pytorch/My_Code/results/save_model/G_AB_xx_real_%d.pth' % epoch)
-            # os.path.join("F:/JZJ/hello pytorch/My_Code/", "results", time_str)
-
-            # torch.save(G_AB.state_dict(), "saved_models/%s/G_AB_%d.pth" % (opt.dataset_name, epoch))
-        #     torch.save(G_BA.state_dict(), "saved_models/%s/G_BA_%d.pth" % (opt.dataset_name, epoch))
-        #     torch.save(D_A.state_dict(), "saved_models/%s/D_A_%d.pth" % (opt.dataset_name, epoch))
-        #     torch.save(D_B.state_dict(), "saved_models/%s/D_B_%d.pth" % (opt.dataset_name, epoch))
-        # if epoch > (Epoch / 2) and eval_mean < best_loss:
-
         if epoch != -1 and eval_mean < best_loss:
             best_loss = eval_mean
             best_epoch = epoch
-            # torch.save(G_AB.state_dict(), 'F:/JZJ/hello pytorch/My_Code/results/save_model/G_AB_yy_imag_%d.pth' % epoch)
             torch.save(G_AB.state_dict(), '%s/G_AB_yy_real_%d.pth' % (log_dir, epoch))
 
     print(
-        " done ~~~~ {}, best acc: {} in :{} epochs. ".format(datetime.datetime.strftime(datetime.datetime.now(), '%m-%d_%H-%M'),
-                                                             best_loss, best_epoch))
+        " done ~~~~ {}, best acc: {} in :{} epochs. ".format(
+            datetime.datetime.strftime(datetime.datetime.now(), '%m-%d_%H-%M'),
+            best_loss, best_epoch))
     now_time = datetime.datetime.now()
     time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
     print(time_str)
