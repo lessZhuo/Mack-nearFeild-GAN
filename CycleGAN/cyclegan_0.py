@@ -11,14 +11,12 @@ from torchvision.utils import save_image, make_grid
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torch.autograd import Variable
-
 from models import *
-from datasets_0 import *
+from datasets import *
 from utils import *
-
-import torch.nn as nn
-import torch.nn.functional as F
 import torch
+
+# ---------------------------------参数设置---------------------------------------------
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
@@ -29,7 +27,7 @@ parser.add_argument("--lr", type=float, default=0.00005, help="adam: learning ra
 parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--decay_epoch", type=int, default=100, help="epoch from which to start lr decay")
-parser.add_argument("--n_cpu", type=int, default=2, help="number of cpu threads to use during batch generation")  # 8
+parser.add_argument("--n_cpu", type=int, default=2, help="number of cpu threads to use during batch generation")
 parser.add_argument("--img_height", type=int, default=256, help="size of image height")  # 256
 parser.add_argument("--img_width", type=int, default=256, help="size of image width")  # 256
 parser.add_argument("--channels", type=int, default=1, help="number of image channels")
@@ -39,11 +37,12 @@ parser.add_argument("--n_residual_blocks", type=int, default=9, help="number of 
 parser.add_argument("--lambda_cyc", type=float, default=10.0, help="cycle loss weight")
 parser.add_argument("--lambda_id", type=float, default=5.0, help="identity loss weight")
 opt = parser.parse_args()
-print(opt)
+
 
 # Create sample and checkpoint directories
-os.makedirs("images/%s" % opt.dataset_name, exist_ok=True)
-os.makedirs("saved_models/%s" % opt.dataset_name, exist_ok=True)
+# -------------------------------设置保存的数据和结果模型------------------------------------------------
+os.makedirs("../result/cycleGan/images/%s" % opt.dataset_name, exist_ok=True)
+os.makedirs("../result/cycleGan/saved_models/%s" % opt.dataset_name, exist_ok=True)
 
 # Losses
 criterion_GAN = torch.nn.MSELoss()
@@ -109,31 +108,23 @@ Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
 fake_A_buffer = ReplayBuffer()
 fake_B_buffer = ReplayBuffer()
 
-# Image transformations
+# transformations
 transforms_ = [
-    # transforms.Resize(int(opt.img_height), Image.BICUBIC),  # opt.img_height * 1.12
-    # transforms.RandomCrop((opt.img_height, opt.img_width)),
-    # transforms.RandomHorizontalFlip(),
     transforms.ToTensor(),
     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    # transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225)),
-    # transforms.Normalize([0.485], [0.229]),
-    # transforms.Normalize([0.5], [0.5]),
     transforms.Normalize([1], [1]),
-    # transforms.Normalize([0], [1]),
-    # transforms.Normalize([2], [2]),
 ]
 
 # Training data loader
 dataloader = DataLoader(
-    ImageDataset("../../data/%s" % opt.dataset_name, transforms_=transforms_),  # unaligned=True
+    MaskNfDataset("../dataset/train/%s" % opt.dataset_name, transforms_=transforms_,combine=True, direction="x"),
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
 # Test data loader
 val_dataloader = DataLoader(
-    ImageDataset("../../data/%s" % opt.dataset_name, transforms_=transforms_, mode="test"),
+    MaskNfDataset("../dataset/test/%s" % opt.dataset_name, transforms_=transforms_,mode="test", combine=True, direction="x"),
     batch_size=1,
     shuffle=True,
     num_workers=1,
@@ -144,6 +135,8 @@ val_dataloader = DataLoader(
 # time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
 # log_dir = os.path.join("F:/JZJ/hello pytorch/My_Code", "results", time_str)
 
+# -------------------------------------设置图片保存方法---------------------------------
+# 先保存，可能最后要写进until里面
 def sample_images(batches_done):
     """Saves a generated sample from the test set"""
     imgs = next(iter(val_dataloader))
@@ -240,12 +233,12 @@ if __name__ == '__main__':
     loss_rec = {"loss_D": [], "loss_G": [], "loss_valid": [], "loss_train": []}
     now_time = datetime.datetime.now()
     time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
-    log_dir = os.path.join("F:/JZJ/hello pytorch/My_Code/", "results", time_str)
+    log_dir = os.path.join("../results/", "cycleGan", time_str)
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
     prev_time = time.time()
-    i, batch = next(enumerate(dataloader))
+    # i, batch = next(enumerate(dataloader))
     best_acc, best_epoch = 0, 0
     best_loss = 0.0001
     for epoch in range(opt.epoch, opt.n_epochs):
@@ -272,11 +265,12 @@ if __name__ == '__main__':
             optimizer_G.zero_grad()
 
             # Identity loss
-            loss_id_A = criterion_identity(G_BA(real_A), real_A)
-            loss_id_B = criterion_identity(G_AB(real_B), real_B)
+            # loss_id_A = criterion_identity(G_BA(real_A), real_A)
+            # loss_id_B = criterion_identity(G_AB(real_B), real_B)
+            # 这个loss暂时考虑去掉，原本只是为了让生产的风格迁移图片色彩接近，而我们不需要
+            # loss_identity = (loss_id_A + loss_id_B) / 2
 
-            loss_identity = (loss_id_A + loss_id_B) / 2
-
+            #----------需要修改验证模型的格式 ----------
             # GAN loss
             fake_B = G_AB(real_A)
             loss_GAN_AB = criterion_GAN(D_B(fake_B), valid)
@@ -294,7 +288,7 @@ if __name__ == '__main__':
             loss_cycle = (loss_cycle_A + loss_cycle_B) / 2
 
             # Total loss
-            loss_G = loss_GAN + opt.lambda_cyc * loss_cycle + opt.lambda_id * loss_identity
+            loss_G = loss_GAN + opt.lambda_cyc * loss_cycle # + opt.lambda_id * loss_identity
             G_loss.append(loss_G.item())
             loss_G.backward()
             optimizer_G.step()
@@ -348,7 +342,7 @@ if __name__ == '__main__':
 
             # Print log
             sys.stdout.write(
-                "\r[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f, adv: %f, cycle: %f, identity: %f] ETA: %s"
+                "\r[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f, adv: %f, cycle: %f] ETA: %s"
                 % (
                     epoch,
                     opt.n_epochs,
@@ -358,7 +352,7 @@ if __name__ == '__main__':
                     loss_G.item(),
                     loss_GAN.item(),
                     loss_cycle.item(),
-                    loss_identity.item(),
+                    # loss_identity.item(),
                     time_left,
                 )
             )

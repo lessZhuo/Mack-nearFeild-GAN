@@ -5,7 +5,7 @@ from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 
 
-class ImageDataset(Dataset):
+class MaskNfDataset(Dataset):
     def __init__(self, root, transforms_=None, mode="train", combine=False, direction="x", part="real"):
         self.transform = transforms.Compose(transforms_)
         self.combine = combine
@@ -45,7 +45,7 @@ class ImageDataset(Dataset):
             nf = self.transform(nf)
             return {"A": mask, "B": nf}
         else:
-            if self.part=="real":
+            if self.part == "real":
                 return {"A": mask, "B": self.transform(nf_real)}
             else:
                 return {"A": mask, "B": self.transform(nf_imag)}
