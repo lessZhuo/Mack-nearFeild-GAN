@@ -123,13 +123,14 @@ for epoch in range(opt.epoch, opt.n_epochs):
         ###### Generators A2B and B2A ######
         optimizer_G.zero_grad()
 
-        # Identity loss
-        # G_A2B(B) should equal B if real B is fed
-        same_B, _, _ = netG_A2B(real_B)
-        loss_identity_B = criterion_identity(same_B, real_B)*opt.lambda_identity
-        # G_B2A(A) should equal A if real A is fed
-        same_A, _, _ = netG_B2A(real_A)
-        loss_identity_A = criterion_identity(same_A, real_A)*opt.lambda_identity
+        # # Identity loss
+        # 一样道理，先去掉这部分，涉及到合并之后的模板不一致
+        # # G_A2B(B) should equal B if real B is fed
+        # same_B, _, _ = netG_A2B(real_B)
+        # loss_identity_B = criterion_identity(same_B, real_B)*opt.lambda_identity
+        # # G_B2A(A) should equal A if real A is fed
+        # same_A, _, _ = netG_B2A(real_A)
+        # loss_identity_A = criterion_identity(same_A, real_A)*opt.lambda_identity
 
         # GAN loss
         fake_B, mask_B, temp_B = netG_A2B(real_A)
@@ -138,7 +139,8 @@ for epoch in range(opt.epoch, opt.n_epochs):
 
         loss_cycle_ABA = criterion_cycle(recovered_A, real_A)
         loss_GAN_A2B = criterion_GAN(pred_fake_B, target_real)
-        loss_pix_A = criterion_identity(fake_B, real_A)
+        # 这里也是无法用在合并上面，考虑下用另一个距离解决
+        # loss_pix_A = criterion_identity(fake_B, real_A)
 
         fake_A, mask_A, temp_A = netG_B2A(real_B)
         recovered_B, _, _  = netG_A2B(fake_A)
@@ -146,8 +148,9 @@ for epoch in range(opt.epoch, opt.n_epochs):
 
         loss_cycle_BAB = criterion_cycle(recovered_B, real_B)
         loss_GAN_B2A = criterion_GAN(pred_fake_A, target_real)
-        loss_pix_B = criterion_identity(fake_A, real_B)
+        # loss_pix_B = criterion_identity(fake_A, real_B)
 
+        # ？？？这里loss不知是用来干嘛的
         loss_reg_A = opt.lambda_reg * (
                 torch.sum(torch.abs(mask_A[:, :, :, :-1] - mask_A[:, :, :, 1:])) +
                 torch.sum(torch.abs(mask_A[:, :, :-1, :] - mask_A[:, :, 1:, :])))
@@ -164,8 +167,10 @@ for epoch in range(opt.epoch, opt.n_epochs):
             rate = opt.default_rate
             print('using normal gan')
 
-        loss_G = ((loss_GAN_A2B + loss_GAN_B2A)*0.5 + (loss_reg_A + loss_reg_B))* (1.-rate) + ((loss_cycle_ABA + loss_cycle_BAB)*opt.lambda_cycle+(loss_pix_B+loss_pix_A)*opt.lambda_pixel)* rate
-    
+        # loss_G = ((loss_GAN_A2B + loss_GAN_B2A)*0.5 + (loss_reg_A + loss_reg_B))* (1.-rate) + ((loss_cycle_ABA + loss_cycle_BAB)*opt.lambda_cycle +(loss_pix_B+loss_pix_A)*opt.lambda_pixel)* rate
+        loss_G = ((loss_GAN_A2B + loss_GAN_B2A) * 0.5 + (loss_reg_A + loss_reg_B)) * (1. - rate) + (
+                    (loss_cycle_ABA + loss_cycle_BAB) * opt.lambda_cycle ) * rate
+
         loss_G.backward()
         optimizer_G.step()
         ###################################
