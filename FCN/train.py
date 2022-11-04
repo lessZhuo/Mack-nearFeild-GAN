@@ -6,24 +6,30 @@ from torch import optim
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 from datetime import datetime
-from text.dataset import LoadDataset
-from text import FCN
+from dataset import LoadDataset
+import FCN
 import matplotlib.pyplot as plt
 import os
+import torchvision.transforms as transforms
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = 'True'
 
 device = t.device('cpu')
 
 # device = t.device('cuda') if t.cuda.is_available() else t.device('cpu')
-BASE_DIR = r'E:\Datasets\近场数据\RECT_ARRAY_MASK'
-BASE_DIR1 = r"E:\Datasets\近场数据\RECT_ARRAY_NF_x0_y0"
+BASE_DIR = r'../dataset/fcn'
 crop_size = (300, 300)
 Epoch = 2
 BATCH_SIZE = 20
 
-Load_train = LoadDataset([BASE_DIR, BASE_DIR1], crop_size)
-Load_val = LoadDataset([BASE_DIR, BASE_DIR1], crop_size)
+transforms_ = [
+    transforms.ToTensor(),
+    # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    transforms.Normalize([1], [1]),
+]
+
+Load_train = LoadDataset(BASE_DIR,transforms_=transforms_,mode="train",combine=False,direction="x",part="real")
+Load_val = LoadDataset(BASE_DIR,transforms_=transforms_,mode="text",combine=False,direction="x",part="real")
 
 train_data = DataLoader(Load_train, BATCH_SIZE, shuffle=True, num_workers=1)
 val_data = DataLoader(Load_val, BATCH_SIZE, shuffle=True, num_workers=1)
@@ -46,8 +52,8 @@ class ModelTrainer(object):
         # 训练批次
         for i, sample in enumerate(train_data):
             # 载入数据
-            img_data = Variable(sample['mask'].to(device))
-            img_label = Variable(sample['label'].to(device))
+            img_data = Variable(sample['A'].to(device))
+            img_label = Variable(sample['B'].to(device))
             # 训练
             out = net(img_data)
             # out = F.log_softmax(out, dim=1)
@@ -57,13 +63,6 @@ class ModelTrainer(object):
             optimizer.step()
             train_loss.append(loss.item())
 
-        #
-        # out_mask=out[0,0,100:200,100:200].detach().numpy()
-        # out_label=img_label[0,0,100:200,100:200].detach().numpy()
-        # plt.imshow(out_mask)
-        # plt.imsave('mask_%i'%(epoch+i),out_mask,format='png')
-        # plt.imshow(out_label)
-        # plt.imsave('label_%i'%(epoch+i),out_label,format='png')
 
         return np.mean(train_loss)
 
@@ -77,8 +76,8 @@ class ModelTrainer(object):
 
         prec_time = datetime.now()
         for j, sample in enumerate(val_data):
-            valImg = Variable(sample['mask'].to(device))
-            valLabel = Variable(sample['label'].to(device))
+            valImg = Variable(sample['A'].to(device))
+            valLabel = Variable(sample['B'].to(device))
 
             out = net(valImg)
 

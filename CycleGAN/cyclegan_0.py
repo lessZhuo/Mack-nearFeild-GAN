@@ -123,14 +123,14 @@ transforms_ = [
 
 # Training data loader
 dataloader = DataLoader(
-    MaskNfDataset("../dataset/train/%s" % opt.dataset_name, transforms_=transforms_, combine=True, direction="x"),
+    MaskNfDataset("../dataset/%s" % opt.dataset_name, transforms_=transforms_, combine=True, direction="x"),
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
 # Test data loader
 val_dataloader = DataLoader(
-    MaskNfDataset("../dataset/test/%s" % opt.dataset_name, transforms_=transforms_, mode="test", combine=True,
+    MaskNfDataset("../dataset/%s" % opt.dataset_name, transforms_=transforms_, mode="test", combine=True,
                   direction="x"),
     batch_size=1,
     shuffle=True,

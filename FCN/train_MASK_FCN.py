@@ -5,29 +5,25 @@ import torch.nn as nn
 import torch
 from torch.utils.data import DataLoader
 import torch.optim as optim
-from mask_fcn.dataset import LoadDataset
-from mask_fcn import FCN
-from mask_fcn.train import ModelTrainer
-from mask_fcn.common_tools import  plot_line
+from dataset import LoadDataset
+import FCN
+from train import ModelTrainer
+from common_tools import plot_line
+import torchvision.transforms as transforms
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 import time
+
 since = time.time()
 if __name__ == "__main__":
 
-    # config
-    # train_dir = os.path.join(BASE_DIR, "..", "..", "Data", "cifar-10",  "cifar10_train")
-    # test_dir = os.path.join(BASE_DIR, "..", "..", "Data", "cifar-10", "cifar10_test")
-    train_1 = r'E:\Datasets\近场数据\RECT_ARRAY_MASK'#train_maks
-    train_2 = r"E:\Datasets\近场数据\RECT_ARRAY_NF_x0_y0"#train_label
-    val_1 = r'E:\Datasets\近场数据\RECT_ARRAY_MASK'  # train_maks
-    val_2= r"E:\Datasets\近场数据\RECT_ARRAY_NF_x0_y0"  # train_label
+    BASE_DIR = r'../dataset/fcn'
 
     now_time = datetime.now()
     time_str = datetime.strftime(now_time, '%m-%d_%H-%M-%S')
-    log_dir = os.path.join(BASE_DIR, "..", "results", time_str)
+    log_dir = os.path.join("../results/fcn", time_str)
     if not os.path.exists(log_dir):
         os.makedirs(log_dir)
 
@@ -40,16 +36,21 @@ if __name__ == "__main__":
     start_epoch = -1
     milestones = [150, 225]  #
 
+    transforms_ = [
+        transforms.ToTensor(),
+        # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        transforms.Normalize([1], [1]),
+    ]
+
     # ============================ step 1/5 数据 ============================
 
     # # 构建MyDataset实例
-    Load_train = LoadDataset([train_1, train_2], crop_size,xy=0,mode='train',split_n=0.8)
-    Load_val = LoadDataset([val_1, val_2], crop_size,xy=0,mode='valid',split_n=0.8)
+    Load_train = LoadDataset(BASE_DIR, transforms_=transforms_, mode="train", combine=False, direction="x", part="real")
+    Load_val = LoadDataset(BASE_DIR, transforms_=transforms_, mode="text", combine=False, direction="x", part="real")
 
     # 构建DataLoder
     train_data = DataLoader(Load_train, BATCH_SIZE, num_workers=2)
     val_data = DataLoader(Load_val, 12, num_workers=2)
-
 
     # ============================ step 2/5 模型 ============================
     fcn = FCN.FCN()
@@ -65,13 +66,12 @@ if __name__ == "__main__":
     #
     # scheduler = optim.lr_scheduler.MultiStepLR(optimizer, gamma=0.1, milestones=milestones)
 
-# ============================ step 5/5 训练 ============================
+    # ============================ step 5/5 训练 ============================
     loss_rec = {"train": [], "valid": []}
 
     best_acc, best_epoch = 0, 0
-    best_loss=0.001
+    best_loss = 0.001
     for epoch in range(start_epoch + 1, Epoch):
-
 
         print('Epoch is [{}/{}]'.format(epoch + 1, Epoch))
         if epoch % 30 == 0 and epoch != 0:
@@ -79,19 +79,19 @@ if __name__ == "__main__":
                 group['lr'] *= 0.5
 
         # 训练(data_loader, model, loss_f, optimizer, epoch_id, device, max_epoch)
-        loss_train = ModelTrainer.train(fcn,train_data, criterion, optimizer, epoch, device)
-        loss_valid = ModelTrainer.evaluate(fcn,val_data, criterion,epoch, device,log_dir)
+        loss_train = ModelTrainer.train(fcn, train_data, criterion, optimizer, epoch, device)
+        loss_valid = ModelTrainer.evaluate(fcn, val_data, criterion, epoch, device, log_dir)
         print("Epoch[{:0>3}/{:0>3}]  Train loss:{:.8f} Valid loss:{:.8f} LR:{}".format(
             epoch + 1, Epoch, loss_train, loss_valid, optimizer.param_groups[0]["lr"]))
 
         # 绘图
         loss_rec["train"].append(loss_train), loss_rec["valid"].append(loss_valid)
 
-        plt_x = np.arange(1, epoch+2)
+        plt_x = np.arange(1, epoch + 2)
         plot_line(plt_x, loss_rec["train"], plt_x, loss_rec["valid"], mode="loss", out_dir=log_dir)
 
-        if epoch > (Epoch/2) and loss_valid < best_loss:
-            best_loss=loss_valid
+        if epoch > (Epoch / 2) and loss_valid < best_loss:
+            best_loss = loss_valid
             best_epoch = epoch
             path_checkpoint = os.path.join(log_dir, '{}.pth'.format(epoch))
             torch.save(fcn.state_dict(), path_checkpoint)
@@ -104,7 +104,7 @@ if __name__ == "__main__":
             # torch.save(checkpoint, path_checkpoint)
 
     print(" done ~~~~ {}, best acc: {} in :{} epochs. ".format(datetime.strftime(datetime.now(), '%m-%d_%H-%M-%S'),
-                                                      best_loss, best_epoch))
+                                                               best_loss, best_epoch))
     now_time = datetime.now()
     time_str = datetime.strftime(now_time, '%m-%d_%H-%M-%S')
     print(time_str)
