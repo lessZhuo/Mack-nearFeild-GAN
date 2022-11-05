@@ -28,11 +28,11 @@ parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first 
 parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--decay_epoch", type=int, default=100, help="epoch from which to start lr decay")
 parser.add_argument("--n_cpu", type=int, default=2, help="number of cpu threads to use during batch generation")
-parser.add_argument("--img_height", type=int, default=256, help="size of image height")  # 256
-parser.add_argument("--img_width", type=int, default=256, help="size of image width")  # 256
+parser.add_argument("--img_height", type=int, default=128, help="size of image height")  # 128
+parser.add_argument("--img_width", type=int, default=128, help="size of image width")  # 128
 parser.add_argument("--sample_interval", type=int, default=100, help="interval between saving generator outputs")
 parser.add_argument("--checkpoint_interval", type=int, default=-1, help="interval between saving model checkpoints")
-parser.add_argument("--n_residual_blocks", type=int, default=9, help="number of residual blocks in generator")
+parser.add_argument("--n_residual_blocks", type=int, default=5, help="number of residual blocks in generator")
 parser.add_argument("--lambda_cyc", type=float, default=10.0, help="cycle loss weight")
 parser.add_argument("--lambda_id", type=float, default=5.0, help="identity loss weight")
 parser.add_argument("--input_channels", type=int, default=1, help="number of input channels")
@@ -112,7 +112,7 @@ fake_A_buffer = ReplayBuffer()
 fake_B_buffer = ReplayBuffer()
 
 # save image and plot loss line
-image_save_plot = ImagePlotSave(output_shape,input_shape)
+image_save_plot = ImagePlotSave(output_shape, input_shape)
 
 # transformations
 transforms_ = [
@@ -123,20 +123,19 @@ transforms_ = [
 
 # Training data loader
 dataloader = DataLoader(
-    MaskNfDataset("../dataset/%s" % opt.dataset_name, transforms_=transforms_, combine=True, direction="x"),
+    MaskNfDataset("../datasets", transforms_=transforms_, combine=True, direction="x"),
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
 # Test data loader
 val_dataloader = DataLoader(
-    MaskNfDataset("../dataset/%s" % opt.dataset_name, transforms_=transforms_, mode="test", combine=True,
+    MaskNfDataset("../datasets", transforms_=transforms_, mode="test", combine=True,
                   direction="x"),
     batch_size=1,
     shuffle=True,
     num_workers=1,
 )
-
 
 # now_time = datetime.datetime.now()
 # time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
@@ -148,6 +147,7 @@ val_dataloader = DataLoader(
 # ----------
 
 if __name__ == '__main__':
+    print(device)
     loss_rec = {"loss_D": [], "loss_G": [], "loss_valid": [], "loss_train": []}
     now_time = datetime.datetime.now()
     time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
@@ -287,7 +287,7 @@ if __name__ == '__main__':
             net_G_BA = G_BA.train()
 
             fake_B = net_G_AB(real_A)
-            fake_A = net_G_AB(real_B)
+            fake_A = net_G_BA(real_B)
 
             loss = criterion_Vail(fake_B, real_B)
             train_loss.append(loss.item())
@@ -297,7 +297,7 @@ if __name__ == '__main__':
 
             # If at sample interval save image
             if batches_done % opt.sample_interval == 0:
-                image_save_plot.sample_images(batches_done,real_A,real_B,fake_A,fake_B)
+                image_save_plot.sample_images(batches_done, log_dir, real_A, real_B, fake_A, fake_B)
         print("Epoch[{:0>3}/{:0>3}]  train_loss:{:.6f}".format(epoch, Epoch, train_mean))
 
         # --------------
@@ -329,7 +329,8 @@ if __name__ == '__main__':
 
         plt_x = np.arange(1, epoch + 2)
         image_save_plot.plot_line(plt_x, loss_rec["loss_G"], plt_x, loss_rec["loss_D"],
-                  plt_x, loss_rec["loss_valid"], plt_x, loss_rec["loss_train"], mode="loss", out_dir=log_dir)
+                                  plt_x, loss_rec["loss_valid"], plt_x, loss_rec["loss_train"], mode="loss",
+                                  out_dir=log_dir)
         # plot_line(plt_x, loss_rec["loss_valid"], mode="xx_real loss", out_dir=log_dir)
 
         # Update learning rates

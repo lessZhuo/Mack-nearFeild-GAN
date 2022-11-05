@@ -50,7 +50,7 @@ class ImagePlotSave:
         self.input_shape = input_shape
 
     # 保存图片
-    def sample_images(batches_done, log_dir, real_A, fake_B, real_B, fake_A):
+    def sample_images(self, batches_done, log_dir, real_A, fake_B, real_B, fake_A):
         """Saves a generated sample from the test set"""
         # Arange images along x-axis
         r_A = make_grid(real_A, nrow=1, normalize=True)

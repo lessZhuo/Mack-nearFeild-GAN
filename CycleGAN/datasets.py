@@ -3,6 +3,9 @@ import os
 import numpy as np
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
+from torch.utils.data import DataLoader
+from torch.autograd import Variable
+import torch as t
 
 
 class MaskNfDataset(Dataset):
@@ -12,13 +15,14 @@ class MaskNfDataset(Dataset):
         self.direction = direction
         self.part = part
         # 获取该文件夹所有符合模式匹配格式的文件，变成list返回
-        self.files_A = sorted(glob.glob(os.path.join(root, "%s/A" % mode) + "/*.*.*"))
-        self.files_B = sorted(glob.glob(os.path.join(root, "%s/B" % mode) + "/*.*.*"))
+        self.files_A = sorted(glob.glob(os.path.join(root, "%s/A" % mode) + "/*.*"))
+        self.files_B = sorted(glob.glob(os.path.join(root, "%s/B" % mode) + "/*.*"))
 
     def __getitem__(self, index):
+
         # 1.读取mask的数据
         mask = np.load(self.files_A[index % len(self.files_A)])
-        mask = mask[np.newaxis, :, :]
+        mask = mask[:, :, np.newaxis]
         mask = mask.astype(np.float)
         mask = self.transform(mask)
 
@@ -36,12 +40,12 @@ class MaskNfDataset(Dataset):
         # 2.2进行类型转换和维度扩充
         nf_real = nf_real.astype(np.float)
         nf_imag = nf_imag.astype(np.float)
-        nf_real = nf_real[np.newaxis, :, :]
-        nf_imag = nf_imag[np.newaxis, :, :]
+        nf_real = nf_real[:, :, np.newaxis]
+        nf_imag = nf_imag[:, :, np.newaxis]
 
         # 2.3根据是否合并或者读取实部虚部进行返回数据
         if self.combine:
-            nf = np.concatenate((nf_real, nf_imag), axis=0)
+            nf = np.concatenate((nf_real, nf_imag), axis=2)
             nf = self.transform(nf)
             return {"A": mask, "B": nf}
         else:
@@ -52,3 +56,23 @@ class MaskNfDataset(Dataset):
 
     def __len__(self):
         return max(len(self.files_A), len(self.files_B))
+
+
+# transformations
+transforms_ = [
+    transforms.ToTensor(),
+    # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    transforms.Normalize([1], [1]),
+]
+
+if __name__ == '__main__':
+    device = t.device('cpu')
+    train = MaskNfDataset("../datasets", transforms_=transforms_, combine=True, direction="x")
+    train_data = DataLoader(train, batch_size=20, shuffle=True, num_workers=0)
+    for i, sample in enumerate(train_data):
+        # 载入数据
+        img_data = Variable(sample['A'].to(device))
+        mmm = Variable(sample['B'].to(device))
+
+        print(img_data.shape)
+        print(mmm.shape)

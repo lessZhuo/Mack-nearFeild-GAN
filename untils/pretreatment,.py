@@ -8,6 +8,8 @@ import pandas as pd
 import os
 import numpy as np
 from torch.utils.data import Dataset
+import random
+
 
 def read_file(path):
     """从文件夹中读取数据"""
@@ -122,8 +124,8 @@ def corp(data, len):
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-BASE_DIR = r'E:\QQfile\近场数据\RECT_ARRAY_MASK'
-BASE_DIR1 = r"E:\QQfile\近场数据\RECT_ARRAY_NF_x0_y0"
+BASE_DIR = r"G:\近场数据\RECT_ARRAY_MASK"
+BASE_DIR1 = r"G:\近场数据\RECT_ARRAY_NF_x0_y0"
 if __name__ == "__main__":
     masks_path = read_file(BASE_DIR)
     labels_path = read_file(BASE_DIR1)
@@ -136,7 +138,11 @@ if __name__ == "__main__":
     for mask, label in c:
         print("-----------------分割线---------------------------")
         mask = read_mask(mask)
-
+        ran = random.randint(0, 9)
+        if ran <= 7:
+            file = "train"
+        else:
+            file = "test"
         f = mask.shape[1]
         l = mask.shape[0]
         # print(mask.shape)
@@ -160,11 +166,11 @@ if __name__ == "__main__":
         # 根据位置进行保存
 
         mask_left_up, mask_left_down, mask_right_up, mask_right_down, mask_mid = corp(mask, 128)
-        np.save("D:\dataset\A\RA_Mask_left_up_%i_%i" % (f, l), mask_left_up)
-        np.save("D:\dataset\A\RA_Mask_left_down_%i_%i" % (f, l), mask_left_down)
-        np.save("D:\dataset\A\RA_Mask_right_up_%i_%i" % (f, l), mask_right_up)
-        np.save("D:\dataset\A\RA_Mask_right_down_%i_%i" % (f, l), mask_right_down)
-        np.save("D:\dataset\A\RA_Mask_mask_mid_%i_%i" % (f, l), mask_mid)
+        np.save("..\datasets\%s\A\RA_Mask_left_up_%i_%i" % (file, f, l), mask_left_up)
+        np.save("..\datasets\%s\A\RA_Mask_left_down_%i_%i" % (file, f, l), mask_left_down)
+        np.save("..\datasets\%s\A\RA_Mask_right_up_%i_%i" % (file, f, l), mask_right_up)
+        np.save("..\datasets\%s\A\RA_Mask_right_down_%i_%i" % (file, f, l), mask_right_down)
+        np.save("..\datasets\%s\A\RA_Mask_mask_mid_%i_%i" % (file, f, l), mask_mid)
 
         # 切分各种类型的label
         # 根据位置进行保存
@@ -178,18 +184,17 @@ if __name__ == "__main__":
         label_yy_imag_left_up, label_yy_imag_left_down, label_yy_imag_right_up, label_yy_imag_right_down, label_yy_imag_mid = corp(
             label_yy_imag, 128)
 
-        np.savez("D:\dataset\B\RA_NF_left_up_%i_%i" % (f, l), xx_real=label_xx_real_left_up,
+        np.savez("..\datasets\%s\B\RA_NF_left_up_%i_%i" % (file, f, l), xx_real=label_xx_real_left_up,
                  xx_imag=label_xx_imag_left_up, yy_real=label_yy_real_left_up, yy_imag=label_yy_imag_left_up)
 
-        np.savez("D:\dataset\B\RA_NF_left_down_%i_%i" % (f, l), xx_real=label_xx_real_left_down,
+        np.savez("..\datasets\%s\B\RA_NF_left_down_%i_%i" % (file, f, l), xx_real=label_xx_real_left_down,
                  xx_imag=label_xx_imag_left_down, yy_real=label_yy_real_left_down, yy_imag=label_yy_imag_left_down)
 
-        np.savez("D:\dataset\B\RA_NF_right_up_%i_%i" % (f, l), xx_real=label_xx_real_right_up,
+        np.savez("..\datasets\%s\B\RA_NF_right_up_%i_%i" % (file, f, l), xx_real=label_xx_real_right_up,
                  xx_imag=label_xx_imag_right_up, yy_real=label_yy_real_right_up, yy_imag=label_yy_imag_right_up)
 
-        np.savez("D:\dataset\B\RA_NF_right_down_%i_%i" % (f, l), xx_real=label_xx_real_right_down,
+        np.savez("..\datasets\%s\B\RA_NF_right_down_%i_%i" % (file, f, l), xx_real=label_xx_real_right_down,
                  xx_imag=label_xx_imag_right_down, yy_real=label_yy_real_right_down, yy_imag=label_yy_imag_right_down)
 
-        np.savez("D:\dataset\B\RA_NF_mid_%i_%i" % (f, l), xx_real=label_xx_real_mid,
+        np.savez("..\datasets\%s\B\RA_NF_mid_%i_%i" % (file, f, l), xx_real=label_xx_real_mid,
                  xx_imag=label_xx_imag_mid, yy_real=label_yy_real_mid, yy_imag=label_yy_imag_mid)
-
