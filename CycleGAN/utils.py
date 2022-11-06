@@ -50,21 +50,57 @@ class ImagePlotSave:
         self.input_shape = input_shape
 
     # 保存图片
-    def sample_images(self, batches_done, log_dir, real_A, fake_B, real_B, fake_A):
+    def sample_images(self, batches_done, log_dir, real_A, fake_A, real_B, fake_B):
         """Saves a generated sample from the test set"""
-        # Arange images along x-axis
-        r_A = make_grid(real_A, nrow=1, normalize=True)
-        r_B = make_grid(real_B, nrow=1, normalize=True)
-        f_A = make_grid(fake_A, nrow=1, normalize=True)
-        f_B = make_grid(fake_B, nrow=1, normalize=True)
-        # Arange images along y-axis
-        # image_grid = torch.cat((real_A, fake_B, real_B, fake_A), 1)
-        image_grid = torch.cat((r_A, f_B, r_B, f_A), 1)
-        image_grid = image_grid.cpu()  # .transpose(0, 3, 1, 2)
-        image_grid = image_grid[0, :, :].detach().numpy()  # [0, 0, :, :]
-        # image_grid = Image.fromarray(np.uint8(image_grid * 255)) #.convert('RGB')
-        # image_grid = np.array(image_grid)
-        plt.figure(figsize=(14, 14), dpi=300)
+
+        real_B_r = real_B[0, 0, :, :]
+        real_B_i = real_B[0, 1, :, :]
+        fake_B_r = fake_B[0, 0, :, :]
+        fake_B_i = fake_B[0, 1, :, :]
+        real_A = real_A[0, 0, :, :]
+        fake_A = fake_A[0, 0, :, :]
+
+        # # Arange images along x-axi
+        # r_A = make_grid(real_A, nrow=1, normalize=True)
+        # r_B_r = make_grid(real_B_r, nrow=1, normalize=True)
+        # r_B_i = make_grid(real_B_i, nrow=1, normalize=True)
+        #
+        # f_A = make_grid(fake_A, nrow=1, normalize=True)
+        # f_B_r = make_grid(fake_B_r, nrow=1, normalize=True)
+        # f_B_i = make_grid(fake_B_i, nrow=1, normalize=True)
+        # # Arange images along y-axis
+
+        # image_grid = torch.cat((r_A, f_B_r, f_B_i, r_B_r, r_B_i, f_A), 1)
+
+        # --------------------------2022.11.06 add ---------------------------
+        real_B_r = real_B_r.cpu().squeeze().detach().numpy()
+        real_B_i = real_B_i.cpu().squeeze().detach().numpy()
+        fake_B_r = fake_B_r.cpu().squeeze().detach().numpy()
+        fake_B_i = fake_B_i.cpu().squeeze().detach().numpy()
+        real_A = real_A.cpu().squeeze().detach().numpy()
+        fake_A = fake_A.cpu().squeeze().detach().numpy()
+
+        x1 = plt.subplot(2, 3, 1)
+        plt.imshow(real_A)
+        x1.set_title('real_A')
+        x2 = plt.subplot(2, 3, 2)
+        plt.imshow(fake_B_r)
+        x2.set_title('fake_B_r')
+        x3 = plt.subplot(2, 3, 3)
+        plt.imshow(fake_B_i)
+        x3.set_title('fake_B_i')
+        x4 = plt.subplot(2, 3, 4)
+        plt.imshow(fake_A)
+        x4.set_title('fake_A')
+        x5 = plt.subplot(2, 3, 5)
+        plt.imshow(real_B_r)
+        x5.set_title('real_B_r')
+        x6 = plt.subplot(2, 3, 6)
+        plt.imshow(real_B_i)
+        x6.set_title('real_B_i')
+
+        # image_grid = image_grid.cpu()  # .transpose(0, 3, 1, 2)
+        # image_grid = image_grid[0, :, :].detach().numpy()  # [0, 0, :, :]
 
         # y 轴不可见
         # plt.gca().axes.get_yaxis().set_visible(False)
@@ -72,19 +108,20 @@ class ImagePlotSave:
         # plt.gca().xaxis.set_major_locator(plt.NullLocator())
         # plt.gca().yaxis.set_major_locator(plt.NullLocator())
         # plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)  # 输出图像#边框设置
-        plt.imshow(image_grid)
+        # plt.imshow(image_grid)
         # plt.axis('off')
-        plt.gca().xaxis.set_ticks_position('top')
-        plt.tick_params(labelsize=30)
+        # plt.gca().xaxis.set_ticks_position('top')
+        # plt.tick_params(labelsize=30)
+        # plt.title('yy_real')
         # plt.show()
         # ax = plt.subplot(111)
         # ax.invert_yaxis()  # y轴反向
         # ax.set_title('xx_real', fontsize=20)
-        plt.title('yy_real', fontsize=50, y=-0.1)
+
         # plt.colorbar()  # fraction=0.05, pad=0.05
-        cb = plt.colorbar()  # fraction=0.05, pad=0.05
-        cb.ax.tick_params(labelsize=30)
-        # plt.savefig("%s/%s.tiff" % ("F:/JZJ/hello pytorch/My_Code/results/time_str", batches_done), bbox_inches='tight')
+        # cb = plt.colorbar()  # fraction=0.05, pad=0.05
+        # cb.ax.tick_params(labelsize=30)
+
         plt.savefig('%s/%i.png' % (log_dir, batches_done), bbox_inches='tight')
         plt.close()
 

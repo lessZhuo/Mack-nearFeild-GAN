@@ -297,7 +297,7 @@ if __name__ == '__main__':
 
             # If at sample interval save image
             if batches_done % opt.sample_interval == 0:
-                image_save_plot.sample_images(batches_done, log_dir, real_A, real_B, fake_A, fake_B)
+                image_save_plot.sample_images(batches_done, log_dir, real_A=real_A, real_B=real_B, fake_A=fake_A, fake_B=fake_B)
         print("Epoch[{:0>3}/{:0>3}]  train_loss:{:.6f}".format(epoch, Epoch, train_mean))
 
         # --------------
