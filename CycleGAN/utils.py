@@ -125,42 +125,42 @@ class ImagePlotSave:
         plt.savefig('%s/%i.png' % (log_dir, batches_done), bbox_inches='tight')
         plt.close()
 
-    def plot_line(selft, train_x, train_y, valid_x, valid_y, valid_z, valid_k, train_m, train_n, mode, out_dir):
+    def plot_line(selft, epoch, loss_G, loss_D, valid_G_AB, train_G_AB, valid_G_BA, train_G_BA, out_dir):
         """
-        绘制训练和验证集的loss曲线/acc曲线
-        :param train_x: epoch
-        :param train_y: 标量值
-        :param valid_x:
-        :param valid_y:
-        :param mode:  'loss' or 'acc'
-        :param out_dir:
-        :return:
+        绘制训练和验证集的loss曲线
         """
         plt.figure(figsize=(14, 14), dpi=300)
-        plt.subplot(211)
-        plt.plot(train_x, train_y, label='lossG', color='b', marker='o', markerfacecolor='b', markersize=10)
-        plt.plot(valid_x, valid_y, label='lossD', color='r', marker='o', markerfacecolor='r', markersize=10)
+        plt.subplot(221)
+        plt.plot(epoch, loss_G, label='lossG', color='b', marker='o', markerfacecolor='b', markersize=10)
+        plt.plot(epoch, loss_D, label='lossD', color='r', marker='o', markerfacecolor='r', markersize=10)
         # # plt.plot(valid_z, valid_k, label='Valid', fontsize=100)
         #
-        # plt.ylabel(str(mode), fontsize=100)
-        # # plt.xlabel('Epoch', fontsize=100)
+        plt.xlabel('Epoch', fontsize=30)
         plt.tick_params(labelsize=30)
         # # location = 'upper right' if mode == 'loss' else 'upper left'
         plt.legend(loc='best', prop={'size': 30})
         # # plt.gca().axes.get_xaxis().set_visible(False)
-        plt.title('yy_real loss', fontsize=30)
+        plt.title('loss', fontsize=30)
 
-        plt.subplot(212)
+        plt.subplot(222)
 
-        # plt.ylabel(str('Valid Loss'))
         plt.xlabel('Epoch', fontsize=30)
-        # plt.title('Valid Loss', fontsize=10)
-        plt.plot(valid_z, valid_k, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=10)
-        plt.plot(train_m, train_n, label='Train', color='r', marker='o', markerfacecolor='r', markersize=10)
+        plt.plot(epoch, valid_G_AB, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=10)
+        plt.plot(epoch, train_G_AB, label='Train', color='r', marker='o', markerfacecolor='r', markersize=10)
         plt.tick_params(labelsize=30)
         # location = 'upper right' if mode == 'loss' else 'upper left'
         plt.legend(loc='best', prop={'size': 30})
-        # plt.gca().axes.get_xaxis().set_visible(True)
-        # plt.figure(figsize=(14, 14), dpi=300)
-        plt.savefig(os.path.join(out_dir, mode + '.tiff'))
+        plt.title('G_AB', fontsize=30)
+
+        plt.subplot(223)
+
+        plt.xlabel('Epoch', fontsize=30)
+        plt.plot(epoch, valid_G_BA, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=10)
+        plt.plot(epoch, train_G_BA, label='Train', color='r', marker='o', markerfacecolor='r', markersize=10)
+        plt.tick_params(labelsize=30)
+        # location = 'upper right' if mode == 'loss' else 'upper left'
+        plt.legend(loc='best', prop={'size': 30})
+        plt.title('G_BA', fontsize=30)
+
+        plt.savefig(os.path.join(out_dir + '.png'))
         plt.close()

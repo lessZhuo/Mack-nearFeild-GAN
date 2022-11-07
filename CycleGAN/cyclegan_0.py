@@ -20,9 +20,9 @@ import torch
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
-parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
+parser.add_argument("--n_epochs", type=int, default=50, help="number of epochs of training")
 parser.add_argument("--dataset_name", type=str, default="monet2photo", help="name of the dataset")
-parser.add_argument("--batch_size", type=int, default=1, help="size of the batches")
+parser.add_argument("--batch_size", type=int, default=4, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.00005, help="adam: learning rate")
 parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
@@ -162,7 +162,8 @@ if __name__ == '__main__':
     for epoch in range(opt.epoch, opt.n_epochs):
         D_loss = []
         G_loss = []
-        train_loss = []
+        train_loss_AB = []
+        train_loss_BA = []
         for i, batch in enumerate(dataloader):
 
             # Set model input
@@ -289,47 +290,62 @@ if __name__ == '__main__':
             fake_B = net_G_AB(real_A)
             fake_A = net_G_BA(real_B)
 
-            loss = criterion_Vail(fake_B, real_B)
-            train_loss.append(loss.item())
+            loss_AB = criterion_Vail(fake_B, real_B)
+            train_loss_AB.append(loss_AB.item())
 
-            train_mean = np.mean(train_loss)
-            # print("Epoch[{:0>3}/{:0>3}]  train_loss:{:.6f}".format(epoch, Epoch, train_mean))
+            loss_BA = criterion_Vail(fake_A, real_A)
+            train_loss_BA.append(loss_BA.item())
+
+            train_mean_AB = np.mean(train_loss_AB)
+            train_mean_BA = np.mean(train_loss_BA)
 
             # If at sample interval save image
             if batches_done % opt.sample_interval == 0:
-                image_save_plot.sample_images(batches_done, log_dir, real_A=real_A, real_B=real_B, fake_A=fake_A, fake_B=fake_B)
-        print("Epoch[{:0>3}/{:0>3}]  train_loss:{:.6f}".format(epoch, Epoch, train_mean))
+                image_save_plot.sample_images(batches_done, log_dir, real_A=real_A, real_B=real_B, fake_A=fake_A,
+                                              fake_B=fake_B)
+        print("Epoch[{:0>3}/{:0>3}]  train_AB_loss:{:.6f}  trainBA_loss:{:.6f} ".format(epoch, Epoch, train_mean_AB,
+                                                                                        train_mean_BA))
 
         # --------------
         #  vail Progress
         # --------------
 
-        net = G_AB.eval()
-        eval_loss = []
+        net_G_AB_v = G_AB.eval()
+        net_G_BA_v = G_BA.eval()
+        eval_loss_G_AB = []
+        eval_loss_G_BA = []
         # 验证用论文的函数验证 MSE验证
         for j, sample in enumerate(val_dataloader):
             real_A = Variable(sample['A'].to(device))
             real_B = Variable(sample['B'].to(device))
 
-            fake_B = net(real_A)
+            fake_B = net_G_AB_v(real_A)
+            fake_A = net_G_AB_v(real_B)
 
-            loss = criterion_Vail(fake_B, real_B)
-            eval_loss.append(loss.item())
+            loss_G_AB = criterion_Vail(fake_B, real_B)
+            eval_loss_G_AB.append(loss_G_AB.item())
+
+            loss_G_BA = criterion_Vail(fake_A, real_A)
+            eval_loss_G_BA.append(loss_G_BA.item())
 
         G_mean = np.mean(G_loss)
         D_mean = np.mean(D_loss)
-        eval_mean = np.mean(eval_loss)
+        eval_mean_AB = np.mean(eval_loss_G_AB)
+        eval_mean_BA = np.mean(eval_loss_G_BA)
 
-        print("Epoch[{:0>3}/{:0>3}]  loss_G:{:.6f} loss_D:{:.6f} loss_valid:{:.9f} train_loss:{:.9f}".format(
-            epoch, Epoch, G_mean, D_mean, eval_mean, train_mean))
+        print(
+            "Epoch[{:0>3}/{:0>3}]  loss_G:{:.6f} loss_D:{:.6f} loss_G_AB_valid:{:.9f} loss_G_BA_valid:{:.9f} train_G_AB_loss:{:.9f} train_G_BA_loss:{:.9f}".format(
+                epoch, Epoch, G_mean, D_mean, eval_mean_AB, eval_mean_BA, train_mean_AB, train_mean_BA))
 
         # 绘图
         loss_rec["loss_G"].append(G_mean), loss_rec["loss_D"].append(D_mean),
-        loss_rec["loss_valid"].append(eval_mean), loss_rec["loss_train"].append(train_mean)
+        loss_rec["loss_G_AB_valid"].append(eval_mean_AB), loss_rec["loss_G_BA_valid"].append(eval_mean_BA), \
+        loss_rec["loss_G_AB_train"].append(train_mean_AB), loss_rec["loss_G_BA_train"].append(train_mean_BA)
 
         plt_x = np.arange(1, epoch + 2)
-        image_save_plot.plot_line(plt_x, loss_rec["loss_G"], plt_x, loss_rec["loss_D"],
-                                  plt_x, loss_rec["loss_valid"], plt_x, loss_rec["loss_train"], mode='loss', out_dir=log_dir)
+        image_save_plot.plot_line(plt_x, loss_rec["loss_G"], loss_rec["loss_D"], loss_rec["loss_G_AB_valid"],
+                                  loss_rec["loss_G_AB_train"], loss_rec["loss_G_BA_valid"], loss_rec["loss_G_BA_train"],
+                                  out_dir=log_dir)
         # plot_line(plt_x, loss_rec["loss_valid"], mode="xx_real loss", out_dir=log_dir)
 
         # Update learning rates
@@ -337,10 +353,11 @@ if __name__ == '__main__':
         lr_scheduler_D_A.step()
         lr_scheduler_D_B.step()
 
-        if epoch != -1 and eval_mean < best_loss:
-            best_loss = eval_mean
+        if epoch > opt.n_epochs / 2 and eval_mean_AB + eval_mean_BA < best_loss:
+            best_loss = eval_mean_AB + eval_mean_BA
             best_epoch = epoch
-            torch.save(G_AB.state_dict(), '%s/G_AB_yy_real_%d.pth' % (log_dir, epoch))
+            torch.save(G_AB.state_dict(), '%s/G_AB_%d.pth' % (log_dir, epoch))
+            torch.save(G_BA.state_dict(), '%s/G_BA_%d.pth' % (log_dir, epoch))
 
     print(
         " done ~~~~ {}, best acc: {} in :{} epochs. ".format(
