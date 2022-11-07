@@ -125,7 +125,7 @@ class ImagePlotSave:
         plt.savefig('%s/%i.png' % (log_dir, batches_done), bbox_inches='tight')
         plt.close()
 
-    def plot_line(train_x, train_y, valid_x, valid_y, valid_z, valid_k, train_m, train_n, mode, out_dir):
+    def plot_line(selft, train_x, train_y, valid_x, valid_y, valid_z, valid_k, train_m, train_n, mode, out_dir):
         """
         绘制训练和验证集的loss曲线/acc曲线
         :param train_x: epoch

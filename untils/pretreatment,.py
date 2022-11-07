@@ -124,8 +124,8 @@ def corp(data, len):
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-BASE_DIR = r"E:\下载目录\近场数据\RECT_ARRAY_MASK"
-BASE_DIR1 = r"E:\下载目录\近场数据\RECT_ARRAY_NF_x0_y0"
+BASE_DIR = r"G:\近场数据\RECT_ARRAY_MASK"
+BASE_DIR1 = r"G:\近场数据\RECT_ARRAY_NF_x0_y0"
 if __name__ == "__main__":
     masks_path = read_file(BASE_DIR)
     labels_path = read_file(BASE_DIR1)
@@ -142,8 +142,10 @@ if __name__ == "__main__":
     log_list = []
     log_list += (dir_test_A, dir_train_B, dir_test_A, dir_test_B)
     for log_dir in log_list:
+        print(log_dir)
         if not os.path.exists(log_dir):
             os.makedirs(log_dir)
+            print(log_dir)
 
     for mask, label in c:
         print("-----------------分割线---------------------------")

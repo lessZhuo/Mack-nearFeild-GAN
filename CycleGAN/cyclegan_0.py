@@ -28,8 +28,8 @@ parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first 
 parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--decay_epoch", type=int, default=100, help="epoch from which to start lr decay")
 parser.add_argument("--n_cpu", type=int, default=2, help="number of cpu threads to use during batch generation")
-parser.add_argument("--img_height", type=int, default=128, help="size of image height")  # 128
-parser.add_argument("--img_width", type=int, default=128, help="size of image width")  # 128
+parser.add_argument("--img_height", type=int, default=256, help="size of image height")  # 128
+parser.add_argument("--img_width", type=int, default=256, help="size of image width")  # 128
 parser.add_argument("--sample_interval", type=int, default=100, help="interval between saving generator outputs")
 parser.add_argument("--checkpoint_interval", type=int, default=-1, help="interval between saving model checkpoints")
 parser.add_argument("--n_residual_blocks", type=int, default=5, help="number of residual blocks in generator")
@@ -118,19 +118,19 @@ image_save_plot = ImagePlotSave(output_shape, input_shape)
 transforms_ = [
     transforms.ToTensor(),
     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    transforms.Normalize([1], [1]),
+    transforms.Normalize([1], [1])
 ]
 
 # Training data loader
 dataloader = DataLoader(
-    MaskNfDataset("../datasets", transforms_=transforms_, combine=True, direction="x"),
+    MaskNfDataset("../datasets/crop_256", transforms_=transforms_, combine=True, direction="x"),
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
 # Test data loader
 val_dataloader = DataLoader(
-    MaskNfDataset("../datasets", transforms_=transforms_, mode="test", combine=True,
+    MaskNfDataset("../datasets/crop_256", transforms_=transforms_, mode="test", combine=True,
                   direction="x"),
     batch_size=1,
     shuffle=True,
@@ -329,8 +329,7 @@ if __name__ == '__main__':
 
         plt_x = np.arange(1, epoch + 2)
         image_save_plot.plot_line(plt_x, loss_rec["loss_G"], plt_x, loss_rec["loss_D"],
-                                  plt_x, loss_rec["loss_valid"], plt_x, loss_rec["loss_train"], mode="loss",
-                                  out_dir=log_dir)
+                                  plt_x, loss_rec["loss_valid"], plt_x, loss_rec["loss_train"], mode='loss', out_dir=log_dir)
         # plot_line(plt_x, loss_rec["loss_valid"], mode="xx_real loss", out_dir=log_dir)
 
         # Update learning rates

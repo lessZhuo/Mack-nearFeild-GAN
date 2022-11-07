@@ -24,7 +24,7 @@ class MaskNfDataset(Dataset):
         mask = np.load(self.files_A[index % len(self.files_A)])
         mask = mask[:, :, np.newaxis]
         mask = mask.astype(np.float)
-        mask = self.transform(mask)
+        mask = self.transform(mask).float()
 
         # 2.读取近场数据
         near_field = np.load(self.files_B[index % len(self.files_B)])
@@ -38,21 +38,21 @@ class MaskNfDataset(Dataset):
             nf_imag = near_field["yy_imag"]
 
         # 2.2进行类型转换和维度扩充
-        nf_real = nf_real.astype(np.float)
-        nf_imag = nf_imag.astype(np.float)
+        nf_real = nf_real.astype(np.float32)
+        nf_imag = nf_imag.astype(np.float32)
         nf_real = nf_real[:, :, np.newaxis]
         nf_imag = nf_imag[:, :, np.newaxis]
 
         # 2.3根据是否合并或者读取实部虚部进行返回数据
         if self.combine:
             nf = np.concatenate((nf_real, nf_imag), axis=2)
-            nf = self.transform(nf)
+            nf = self.transform(nf).float()
             return {"A": mask, "B": nf}
         else:
             if self.part == "real":
-                return {"A": mask, "B": self.transform(nf_real)}
+                return {"A": mask, "B": self.transform(nf_real).float()}
             else:
-                return {"A": mask, "B": self.transform(nf_imag)}
+                return {"A": mask, "B": self.transform(nf_imag).float()}
 
     def __len__(self):
         return max(len(self.files_A), len(self.files_B))
