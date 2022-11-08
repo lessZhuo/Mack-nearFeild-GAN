@@ -26,11 +26,11 @@ parser.add_argument("--batch_size", type=int, default=4, help="size of the batch
 parser.add_argument("--lr", type=float, default=0.00005, help="adam: learning rate")
 parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
-parser.add_argument("--decay_epoch", type=int, default=100, help="epoch from which to start lr decay")
+parser.add_argument("--decay_epoch", type=int, default=20, help="epoch from which to start lr decay")
 parser.add_argument("--n_cpu", type=int, default=2, help="number of cpu threads to use during batch generation")
 parser.add_argument("--img_height", type=int, default=256, help="size of image height")  # 128
 parser.add_argument("--img_width", type=int, default=256, help="size of image width")  # 128
-parser.add_argument("--sample_interval", type=int, default=100, help="interval between saving generator outputs")
+parser.add_argument("--sample_interval", type=int, default=250, help="interval between saving generator outputs")
 parser.add_argument("--checkpoint_interval", type=int, default=-1, help="interval between saving model checkpoints")
 parser.add_argument("--n_residual_blocks", type=int, default=5, help="number of residual blocks in generator")
 parser.add_argument("--lambda_cyc", type=float, default=10.0, help="cycle loss weight")
@@ -148,7 +148,7 @@ val_dataloader = DataLoader(
 
 if __name__ == '__main__':
     print(device)
-    loss_rec = {"loss_D": [], "loss_G": [], "loss_valid": [], "loss_train": []}
+    loss_rec = {"loss_D": [], "loss_G": [], "loss_G_AB_valid": [], "loss_G_AB_train": [], "loss_G_BA_valid": [], "loss_G_BA_train": []}
     now_time = datetime.datetime.now()
     time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
     log_dir = os.path.join("../results/", "cycleGan", time_str)
@@ -158,14 +158,15 @@ if __name__ == '__main__':
     prev_time = time.time()
     # i, batch = next(enumerate(dataloader))
     best_acc, best_epoch = 0, 0
-    best_loss = 0.0001
+    best_loss = 0.0003
     for epoch in range(opt.epoch, opt.n_epochs):
         D_loss = []
         G_loss = []
         train_loss_AB = []
         train_loss_BA = []
         for i, batch in enumerate(dataloader):
-
+            # 清除缓存
+            torch.cuda.empty_cache()
             # Set model input
             real_A = Variable(batch["A"].type(Tensor))
             real_B = Variable(batch["B"].type(Tensor))
@@ -320,7 +321,7 @@ if __name__ == '__main__':
             real_B = Variable(sample['B'].to(device))
 
             fake_B = net_G_AB_v(real_A)
-            fake_A = net_G_AB_v(real_B)
+            fake_A = net_G_BA_v(real_B)
 
             loss_G_AB = criterion_Vail(fake_B, real_B)
             eval_loss_G_AB.append(loss_G_AB.item())

@@ -121,7 +121,7 @@ class ImagePlotSave:
         # plt.colorbar()  # fraction=0.05, pad=0.05
         # cb = plt.colorbar()  # fraction=0.05, pad=0.05
         # cb.ax.tick_params(labelsize=30)
-
+        plt.subplots_adjust(wspace=0.35, hspace=0.35)
         plt.savefig('%s/%i.png' % (log_dir, batches_done), bbox_inches='tight')
         plt.close()
 
@@ -129,10 +129,10 @@ class ImagePlotSave:
         """
         绘制训练和验证集的loss曲线
         """
-        plt.figure(figsize=(14, 14), dpi=300)
+        plt.figure(figsize=(28, 14), dpi=300)
         plt.subplot(221)
-        plt.plot(epoch, loss_G, label='lossG', color='b', marker='o', markerfacecolor='b', markersize=10)
-        plt.plot(epoch, loss_D, label='lossD', color='r', marker='o', markerfacecolor='r', markersize=10)
+        plt.plot(epoch, loss_G, label='lossG', color='b', marker='o', markerfacecolor='b', markersize=15)
+        plt.plot(epoch, loss_D, label='lossD', color='r', marker='o', markerfacecolor='r', markersize=15)
         # # plt.plot(valid_z, valid_k, label='Valid', fontsize=100)
         #
         plt.xlabel('Epoch', fontsize=30)
@@ -145,8 +145,8 @@ class ImagePlotSave:
         plt.subplot(222)
 
         plt.xlabel('Epoch', fontsize=30)
-        plt.plot(epoch, valid_G_AB, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=10)
-        plt.plot(epoch, train_G_AB, label='Train', color='r', marker='o', markerfacecolor='r', markersize=10)
+        plt.plot(epoch, valid_G_AB, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=15)
+        plt.plot(epoch, train_G_AB, label='Train', color='r', marker='o', markerfacecolor='r', markersize=15)
         plt.tick_params(labelsize=30)
         # location = 'upper right' if mode == 'loss' else 'upper left'
         plt.legend(loc='best', prop={'size': 30})
@@ -155,12 +155,12 @@ class ImagePlotSave:
         plt.subplot(223)
 
         plt.xlabel('Epoch', fontsize=30)
-        plt.plot(epoch, valid_G_BA, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=10)
-        plt.plot(epoch, train_G_BA, label='Train', color='r', marker='o', markerfacecolor='r', markersize=10)
+        plt.plot(epoch, valid_G_BA, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=15)
+        plt.plot(epoch, train_G_BA, label='Train', color='r', marker='o', markerfacecolor='r', markersize=15)
         plt.tick_params(labelsize=30)
         # location = 'upper right' if mode == 'loss' else 'upper left'
         plt.legend(loc='best', prop={'size': 30})
         plt.title('G_BA', fontsize=30)
-
-        plt.savefig(os.path.join(out_dir + '.png'))
+        plt.subplots_adjust(wspace=0.4, hspace=0.4)
+        plt.savefig(os.path.join(out_dir+r'\loss.png'))
         plt.close()
