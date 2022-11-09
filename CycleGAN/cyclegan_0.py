@@ -37,6 +37,7 @@ parser.add_argument("--lambda_cyc", type=float, default=10.0, help="cycle loss w
 parser.add_argument("--lambda_id", type=float, default=5.0, help="identity loss weight")
 parser.add_argument("--input_channels", type=int, default=1, help="number of input channels")
 parser.add_argument("--output_channels", type=int, default=2, help="number of image channels")
+parser.add_argument("--proportion", type=float, default=0.5, help="proportion of A to B loss in total loss ")
 opt = parser.parse_args()
 
 # Create sample and checkpoint directories
@@ -137,6 +138,9 @@ val_dataloader = DataLoader(
     num_workers=1,
 )
 
+# proportion of loss
+proportion = opt.proportion
+
 # now_time = datetime.datetime.now()
 # time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
 # log_dir = os.path.join("F:/JZJ/hello pytorch/My_Code", "results", time_str)
@@ -148,7 +152,8 @@ val_dataloader = DataLoader(
 
 if __name__ == '__main__':
     print(device)
-    loss_rec = {"loss_D": [], "loss_G": [], "loss_G_AB_valid": [], "loss_G_AB_train": [], "loss_G_BA_valid": [], "loss_G_BA_train": []}
+    loss_rec = {"loss_D": [], "loss_G": [], "loss_G_AB_valid": [], "loss_G_AB_train": [], "loss_G_BA_valid": [],
+                "loss_G_BA_train": []}
     now_time = datetime.datetime.now()
     time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
     log_dir = os.path.join("../results/", "cycleGan", time_str)
@@ -197,7 +202,7 @@ if __name__ == '__main__':
             fake_A = G_BA(real_B)
             loss_GAN_BA = criterion_GAN(D_A(fake_A), valid)
 
-            loss_GAN = (loss_GAN_AB + loss_GAN_BA) / 2
+            loss_GAN = loss_GAN_AB * proportion + loss_GAN_BA * (1-proportion)
 
             # Cycle loss
             recov_A = G_BA(fake_B)
@@ -205,7 +210,7 @@ if __name__ == '__main__':
             recov_B = G_AB(fake_A)
             loss_cycle_B = criterion_cycle(recov_B, real_B)
 
-            loss_cycle = (loss_cycle_A + loss_cycle_B) / 2
+            loss_cycle = loss_cycle_A * proportion + loss_cycle_B * (1-proportion)
 
             # Total loss
             loss_G = loss_GAN + opt.lambda_cyc * loss_cycle  # + opt.lambda_id * loss_identity
@@ -247,7 +252,7 @@ if __name__ == '__main__':
             loss_D_B.backward()
             optimizer_D_B.step()
 
-            loss_D = (loss_D_A + loss_D_B) / 2
+            loss_D = loss_D_A * proportion + loss_D_B * (1-proportion)
             D_loss.append(loss_D.item())
 
             # --------------
