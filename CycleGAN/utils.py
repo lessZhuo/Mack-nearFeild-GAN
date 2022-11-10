@@ -50,7 +50,7 @@ class ImagePlotSave:
         self.input_shape = input_shape
 
     # 保存图片
-    def sample_images(self, batches_done, log_dir, real_A, fake_A, real_B, fake_B):
+    def sample_images(self, epoch, batches_done, log_dir, real_A, fake_A, real_B, fake_B):
         """Saves a generated sample from the test set"""
 
         real_B_r = real_B[0, 0, :, :]
@@ -122,10 +122,10 @@ class ImagePlotSave:
         # cb = plt.colorbar()  # fraction=0.05, pad=0.05
         # cb.ax.tick_params(labelsize=30)
         plt.subplots_adjust(wspace=0.35, hspace=0.35)
-        plt.savefig('%s/%i.png' % (log_dir, batches_done), bbox_inches='tight')
+        plt.savefig('%s/%i_%i.png' % (log_dir,epoch, batches_done), bbox_inches='tight')
         plt.close()
 
-    def plot_line(selft, epoch, loss_G, loss_D, valid_G_AB, train_G_AB, valid_G_BA, train_G_BA, out_dir):
+    def plot_line(selft, epoch, loss_G, loss_D, valid_G_AB, train_G_AB, valid_G_BA, train_G_BA, out_dir, mark='all'):
         """
         绘制训练和验证集的loss曲线
         """
@@ -162,5 +162,5 @@ class ImagePlotSave:
         plt.legend(loc='best', prop={'size': 30})
         plt.title('G_BA', fontsize=30)
         plt.subplots_adjust(wspace=0.4, hspace=0.4)
-        plt.savefig(os.path.join(out_dir+r'\loss.png'))
+        plt.savefig(os.path.join(out_dir, mark + r'loss.png'))
         plt.close()

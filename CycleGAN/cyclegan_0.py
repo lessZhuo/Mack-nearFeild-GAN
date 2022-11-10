@@ -22,7 +22,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
 parser.add_argument("--n_epochs", type=int, default=50, help="number of epochs of training")
 parser.add_argument("--dataset_name", type=str, default="monet2photo", help="name of the dataset")
-parser.add_argument("--batch_size", type=int, default=4, help="size of the batches")
+parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.00005, help="adam: learning rate")
 parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
@@ -37,7 +37,7 @@ parser.add_argument("--lambda_cyc", type=float, default=10.0, help="cycle loss w
 parser.add_argument("--lambda_id", type=float, default=5.0, help="identity loss weight")
 parser.add_argument("--input_channels", type=int, default=1, help="number of input channels")
 parser.add_argument("--output_channels", type=int, default=2, help="number of image channels")
-parser.add_argument("--proportion", type=float, default=0.5, help="proportion of A to B loss in total loss ")
+parser.add_argument("--proportion", type=float, default=0.9, help="proportion of A to B loss in total loss ")
 opt = parser.parse_args()
 
 # Create sample and checkpoint directories
@@ -163,12 +163,13 @@ if __name__ == '__main__':
     prev_time = time.time()
     # i, batch = next(enumerate(dataloader))
     best_acc, best_epoch = 0, 0
-    best_loss = 0.0003
+    best_loss = 0.01
     for epoch in range(opt.epoch, opt.n_epochs):
         D_loss = []
         G_loss = []
         train_loss_AB = []
         train_loss_BA = []
+        torch.cuda.empty_cache()
         for i, batch in enumerate(dataloader):
             # 清除缓存
             torch.cuda.empty_cache()
@@ -202,7 +203,7 @@ if __name__ == '__main__':
             fake_A = G_BA(real_B)
             loss_GAN_BA = criterion_GAN(D_A(fake_A), valid)
 
-            loss_GAN = loss_GAN_AB * proportion + loss_GAN_BA * (1-proportion)
+            loss_GAN = loss_GAN_AB * proportion + loss_GAN_BA * (1 - proportion)
 
             # Cycle loss
             recov_A = G_BA(fake_B)
@@ -210,7 +211,7 @@ if __name__ == '__main__':
             recov_B = G_AB(fake_A)
             loss_cycle_B = criterion_cycle(recov_B, real_B)
 
-            loss_cycle = loss_cycle_A * proportion + loss_cycle_B * (1-proportion)
+            loss_cycle = loss_cycle_B * proportion + loss_cycle_A * (1 - proportion)
 
             # Total loss
             loss_G = loss_GAN + opt.lambda_cyc * loss_cycle  # + opt.lambda_id * loss_identity
@@ -252,7 +253,7 @@ if __name__ == '__main__':
             loss_D_B.backward()
             optimizer_D_B.step()
 
-            loss_D = loss_D_A * proportion + loss_D_B * (1-proportion)
+            loss_D = loss_D_B * proportion + loss_D_A * (1 - proportion)
             D_loss.append(loss_D.item())
 
             # --------------
@@ -307,7 +308,7 @@ if __name__ == '__main__':
 
             # If at sample interval save image
             if batches_done % opt.sample_interval == 0:
-                image_save_plot.sample_images(batches_done, log_dir, real_A=real_A, real_B=real_B, fake_A=fake_A,
+                image_save_plot.sample_images(epoch, batches_done, log_dir, real_A=real_A, real_B=real_B, fake_A=fake_A,
                                               fake_B=fake_B)
         print("Epoch[{:0>3}/{:0>3}]  train_AB_loss:{:.6f}  trainBA_loss:{:.6f} ".format(epoch, Epoch, train_mean_AB,
                                                                                         train_mean_BA))
@@ -353,15 +354,26 @@ if __name__ == '__main__':
                                   loss_rec["loss_G_AB_train"], loss_rec["loss_G_BA_valid"], loss_rec["loss_G_BA_train"],
                                   out_dir=log_dir)
         # plot_line(plt_x, loss_rec["loss_valid"], mode="xx_real loss", out_dir=log_dir)
+        # ------------------------------------------temp-------------------------------------
+        if epoch > 1:
+            image_save_plot.plot_line(plt_x[1:], loss_rec["loss_G"][1:], loss_rec["loss_D"][1:],
+                                      loss_rec["loss_G_AB_valid"][1:],
+                                      loss_rec["loss_G_AB_train"][1:], loss_rec["loss_G_BA_valid"][1:],
+                                      loss_rec["loss_G_BA_train"][1:],
+                                      out_dir=log_dir, mark='temp')
 
         # Update learning rates
         lr_scheduler_G.step()
         lr_scheduler_D_A.step()
         lr_scheduler_D_B.step()
 
-        if epoch > opt.n_epochs / 2 and eval_mean_AB + eval_mean_BA < best_loss:
+        if eval_mean_AB + eval_mean_BA < best_loss:
             best_loss = eval_mean_AB + eval_mean_BA
             best_epoch = epoch
+            print("epoch: %i" % epoch)
+            print("n_epoch: %i" % opt.n_epochs)
+            print("best_loss: %f " % best_loss)
+
             torch.save(G_AB.state_dict(), '%s/G_AB_%d.pth' % (log_dir, epoch))
             torch.save(G_BA.state_dict(), '%s/G_BA_%d.pth' % (log_dir, epoch))
 
