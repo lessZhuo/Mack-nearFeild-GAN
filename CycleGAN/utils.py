@@ -60,18 +60,6 @@ class ImagePlotSave:
         real_A = real_A[0, 0, :, :]
         fake_A = fake_A[0, 0, :, :]
 
-        # # Arange images along x-axi
-        # r_A = make_grid(real_A, nrow=1, normalize=True)
-        # r_B_r = make_grid(real_B_r, nrow=1, normalize=True)
-        # r_B_i = make_grid(real_B_i, nrow=1, normalize=True)
-        #
-        # f_A = make_grid(fake_A, nrow=1, normalize=True)
-        # f_B_r = make_grid(fake_B_r, nrow=1, normalize=True)
-        # f_B_i = make_grid(fake_B_i, nrow=1, normalize=True)
-        # # Arange images along y-axis
-
-        # image_grid = torch.cat((r_A, f_B_r, f_B_i, r_B_r, r_B_i, f_A), 1)
-
         # --------------------------2022.11.06 add ---------------------------
         real_B_r = real_B_r.cpu().squeeze().detach().numpy()
         real_B_i = real_B_i.cpu().squeeze().detach().numpy()
@@ -82,45 +70,29 @@ class ImagePlotSave:
 
         x1 = plt.subplot(2, 3, 1)
         plt.imshow(real_A)
+        plt.colorbar()
         x1.set_title('real_A')
         x2 = plt.subplot(2, 3, 2)
         plt.imshow(fake_B_r)
+        plt.colorbar()
         x2.set_title('fake_B_r')
         x3 = plt.subplot(2, 3, 3)
         plt.imshow(fake_B_i)
+        plt.colorbar()
         x3.set_title('fake_B_i')
         x4 = plt.subplot(2, 3, 4)
         plt.imshow(fake_A)
+        plt.colorbar()
         x4.set_title('fake_A')
         x5 = plt.subplot(2, 3, 5)
         plt.imshow(real_B_r)
+        plt.colorbar()
         x5.set_title('real_B_r')
         x6 = plt.subplot(2, 3, 6)
         plt.imshow(real_B_i)
+        plt.colorbar()
         x6.set_title('real_B_i')
 
-        # image_grid = image_grid.cpu()  # .transpose(0, 3, 1, 2)
-        # image_grid = image_grid[0, :, :].detach().numpy()  # [0, 0, :, :]
-
-        # y 轴不可见
-        # plt.gca().axes.get_yaxis().set_visible(False)
-        # fig, ax = plt.subplots()
-        # plt.gca().xaxis.set_major_locator(plt.NullLocator())
-        # plt.gca().yaxis.set_major_locator(plt.NullLocator())
-        # plt.subplots_adjust(top=1, bottom=0, left=0, right=1, hspace=0, wspace=0)  # 输出图像#边框设置
-        # plt.imshow(image_grid)
-        # plt.axis('off')
-        # plt.gca().xaxis.set_ticks_position('top')
-        # plt.tick_params(labelsize=30)
-        # plt.title('yy_real')
-        # plt.show()
-        # ax = plt.subplot(111)
-        # ax.invert_yaxis()  # y轴反向
-        # ax.set_title('xx_real', fontsize=20)
-
-        # plt.colorbar()  # fraction=0.05, pad=0.05
-        # cb = plt.colorbar()  # fraction=0.05, pad=0.05
-        # cb.ax.tick_params(labelsize=30)
         plt.subplots_adjust(wspace=0.35, hspace=0.35)
         plt.savefig('%s/%i_%i.png' % (log_dir,epoch, batches_done), bbox_inches='tight')
         plt.close()
@@ -163,4 +135,33 @@ class ImagePlotSave:
         plt.title('G_BA', fontsize=30)
         plt.subplots_adjust(wspace=0.4, hspace=0.4)
         plt.savefig(os.path.join(out_dir, mark + r'loss.png'))
+        plt.close()
+
+    def plot_line_test(selft, epoch, time_mean_AB, eval_mean_AB, time_mean_BA, eval_mean_BA, out_dir):
+        """
+        绘制训练和验证集的loss曲线
+        """
+        plt.figure(figsize=(28, 14), dpi=300)
+        plt.subplot(121)
+        plt.plot(epoch, time_mean_AB, label='time_mean_AB', color='b', marker='o', markerfacecolor='b', markersize=15)
+        plt.plot(epoch, time_mean_BA, label='time_mean_BA', color='r', marker='o', markerfacecolor='r', markersize=15)
+
+        #
+        plt.xlabel('Epoch', fontsize=30)
+        plt.tick_params(labelsize=30)
+        plt.legend(loc='best', prop={'size': 30})
+        plt.title('time', fontsize=30)
+
+        plt.subplot(122)
+
+        plt.xlabel('Epoch', fontsize=30)
+        plt.plot(epoch, eval_mean_AB, label='G_AB_loss', color='b', marker='o', markerfacecolor='b', markersize=15)
+        plt.plot(epoch, eval_mean_BA, label='G_BA_loss', color='r', marker='o', markerfacecolor='r', markersize=15)
+        plt.tick_params(labelsize=30)
+        # location = 'upper right' if mode == 'loss' else 'upper left'
+        plt.legend(loc='best', prop={'size': 30})
+        plt.title('loss', fontsize=30)
+
+        plt.subplots_adjust(wspace=0.4, hspace=0.4)
+        plt.savefig(os.path.join(out_dir, r'test_result.png'))
         plt.close()
