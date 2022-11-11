@@ -33,9 +33,9 @@ parser.add_argument("--n_cpu", type=int, default=2, help="number of cpu threads 
 parser.add_argument("--img_height", type=int, default=256, help="size of image height")  # 256
 parser.add_argument("--img_width", type=int, default=256, help="size of image width")  # 256
 parser.add_argument("--channels", type=int, default=1, help="number of image channels")
-parser.add_argument("--sample_interval", type=int, default=100, help="interval between saving generator outputs")
+parser.add_argument("--sample_interval", type=int, default=200, help="interval between saving generator outputs")
 parser.add_argument("--checkpoint_interval", type=int, default=-1, help="interval between saving model checkpoints")
-parser.add_argument("--n_residual_blocks", type=int, default=9, help="number of residual blocks in generator")
+parser.add_argument("--n_residual_blocks", type=int, default=5, help="number of residual blocks in generator")
 parser.add_argument("--lambda_cyc", type=float, default=10.0, help="cycle loss weight")
 parser.add_argument("--lambda_id", type=float, default=5.0, help="identity loss weight")
 parser.add_argument("--input_channels", type=int, default=1, help="number of input channels")
@@ -47,7 +47,6 @@ print(opt)
 # Create sample and checkpoint directories
 os.makedirs("../result/cycleGan/images/%s" % opt.dataset_name, exist_ok=True)
 os.makedirs("../result/cycleGan/saved_models/%s" % opt.dataset_name, exist_ok=True)
-
 
 cuda = torch.cuda.is_available()
 Epoch = opt.n_epochs
@@ -66,8 +65,8 @@ if cuda:
     G_BA = G_BA.cuda()
 
 # ---------------------------------设置加载的参数---------------------------------------------
-G_AB.load_state_dict(torch.load(r"E:\hello pytorch\My_Code\results\test\G_AB_xx_real_0.0000046.pth"))
-G_BA.load_state_dict(torch.load(r"E:\hello pytorch\My_Code\results\test\G_AB_xx_real_0.0000046.pth"))
+G_AB.load_state_dict(torch.load(r"F:\less\results\cycleGan\11-10_08-59\G_AB_24.pth"))
+G_BA.load_state_dict(torch.load(r"F:\less\results\cycleGan\11-10_08-59\G_BA_24.pth"))
 
 Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
 
@@ -86,7 +85,8 @@ transforms_ = [
 
 #  data loader
 dataloader = DataLoader(
-    MaskNfDataset("../datasets/crop_256", transforms_=transforms_, combine=True, direction="x"),  # unaligned=True
+    MaskNfDataset("../datasets/crop_256", transforms_=transforms_, mode='test', combine=True, direction="x"),
+    # unaligned=True
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
@@ -132,7 +132,7 @@ if __name__ == '__main__':
 
             # ------------计算B to A的-----------------
             prev_time = time.time()
-            fake_A = net_G_AB(real_B)
+            fake_A = net_G_BA(real_B)
             curr_time = time.time()
             times_BA.append(curr_time - prev_time)
             loss = criterion_Vail(fake_A, real_A)
@@ -150,19 +150,18 @@ if __name__ == '__main__':
         time_mean_BA = np.mean(times_BA)
         if time_mean_AB < best_times:
             best_times = time_mean_AB
-        print("Epoch[{:0>3}/{:0>3}]  time_AB:{:.6f}  loss_AB_valid:{:.9f}  time_BA:{:.6f}  loss_BA_valid:{:.9f} ".format(
-            epoch, Epoch, time_mean_AB, eval_mean_AB, time_mean_BA, eval_mean_BA))
+        print(
+            "Epoch[{:0>3}/{:0>3}]  time_AB:{:.6f}  loss_AB_valid:{:.9f}  time_BA:{:.6f}  loss_BA_valid:{:.9f} ".format(
+                epoch, Epoch, time_mean_AB, eval_mean_AB, time_mean_BA, eval_mean_BA))
 
         # 绘图
-        loss_rec["time_AB"].append(time_mean_AB), loss_rec["test_loss_AB"].append(eval_mean_AB),
-        loss_rec["time_BA"].append(time_mean_BA), loss_rec["test_loss_BA"].append(eval_mean_BA)
+        loss_rec["time_AB"].append(time_mean_AB), loss_rec["G_AB_loss"].append(eval_mean_AB),
+        loss_rec["time_BA"].append(time_mean_BA), loss_rec["G_BA_loss"].append(eval_mean_BA)
 
         plt_x = np.arange(1, epoch + 2)
-        image_save_plot.plot_line(plt_x, loss_rec["time_AB"], loss_rec["test_loss_AB"], loss_rec["time_BA"],
-                                  loss_rec["test_loss_BA"],
-                                  out_dir=log_dir)
-
-
+        image_save_plot.plot_line_test(plt_x, loss_rec["time_AB"], loss_rec["G_AB_loss"], loss_rec["time_BA"],
+                                       loss_rec["G_BA_loss"],
+                                       out_dir=log_dir)
 
     print(
         " done ~~~~ {}, best time: {}  ".format(datetime.datetime.strftime(datetime.datetime.now(), '%m-%d_%H-%M'),

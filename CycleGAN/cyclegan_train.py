@@ -37,7 +37,7 @@ parser.add_argument("--lambda_cyc", type=float, default=10.0, help="cycle loss w
 parser.add_argument("--lambda_id", type=float, default=5.0, help="identity loss weight")
 parser.add_argument("--input_channels", type=int, default=1, help="number of input channels")
 parser.add_argument("--output_channels", type=int, default=2, help="number of image channels")
-parser.add_argument("--proportion", type=float, default=0.9, help="proportion of A to B loss in total loss ")
+parser.add_argument("--proportion", type=float, default=0.5, help="proportion of A to B loss in total loss ")
 opt = parser.parse_args()
 
 # Create sample and checkpoint directories
