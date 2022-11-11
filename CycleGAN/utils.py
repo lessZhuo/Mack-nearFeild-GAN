@@ -143,12 +143,12 @@ class ImagePlotSave:
         plt.savefig(os.path.join(out_dir, mark + r'loss.png'))
         plt.close()
 
-    def plot_line_test(selft, epoch, time_mean_AB, eval_mean_AB, time_mean_BA, eval_mean_BA, out_dir):
+    def plot_line_test(selft, epoch, time_mean_AB, eval_mean_AB, eval_mean_AB_r, eval_mean_AB_i, time_mean_BA, eval_mean_BA, eval_mean_BA_r, eval_mean_BA_i, out_dir):
         """
         绘制训练和验证集的loss曲线
         """
         plt.figure(figsize=(28, 14), dpi=300)
-        plt.subplot(121)
+        plt.subplot(221)
         plt.plot(epoch, time_mean_AB, label='time_mean_AB', color='b', marker='o', markerfacecolor='b', markersize=15)
         plt.plot(epoch, time_mean_BA, label='time_mean_BA', color='r', marker='o', markerfacecolor='r', markersize=15)
 
@@ -158,15 +158,27 @@ class ImagePlotSave:
         plt.legend(loc='best', prop={'size': 30})
         plt.title('time', fontsize=30)
 
-        plt.subplot(122)
+        plt.subplot(222)
 
         plt.xlabel('Epoch', fontsize=30)
         plt.plot(epoch, eval_mean_AB, label='G_AB_loss', color='b', marker='o', markerfacecolor='b', markersize=15)
-        plt.plot(epoch, eval_mean_BA, label='G_BA_loss', color='r', marker='o', markerfacecolor='r', markersize=15)
+        plt.plot(epoch, eval_mean_AB_r, label='G_BA_loss_r', color='r', marker='o', markerfacecolor='r', markersize=15)
+        plt.plot(epoch, eval_mean_AB_i, label='G_BA_loss_i', color='y', marker='o', markerfacecolor='y', markersize=15)
         plt.tick_params(labelsize=30)
         # location = 'upper right' if mode == 'loss' else 'upper left'
         plt.legend(loc='best', prop={'size': 30})
-        plt.title('loss', fontsize=30)
+        plt.title('loss_AB', fontsize=30)
+
+        plt.subplot(223)
+
+        plt.xlabel('Epoch', fontsize=30)
+        plt.plot(epoch, eval_mean_BA, label='G_BA_loss', color='b', marker='o', markerfacecolor='b', markersize=15)
+        plt.plot(epoch, eval_mean_BA_r, label='G_BA_loss_r', color='r', marker='o', markerfacecolor='r', markersize=15)
+        plt.plot(epoch, eval_mean_BA_i, label='G_BA_loss_i', color='y', marker='o', markerfacecolor='y', markersize=15)
+        plt.tick_params(labelsize=30)
+        # location = 'upper right' if mode == 'loss' else 'upper left'
+        plt.legend(loc='best', prop={'size': 30})
+        plt.title('loss_BA', fontsize=30)
 
         plt.subplots_adjust(wspace=0.6, hspace=0.6)
         plt.savefig(os.path.join(out_dir, r'test_result.png'))
