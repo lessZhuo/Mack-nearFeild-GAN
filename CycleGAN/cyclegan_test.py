@@ -65,8 +65,8 @@ if cuda:
     G_BA = G_BA.cuda()
 
 # ---------------------------------设置加载的参数---------------------------------------------
-G_AB.load_state_dict(torch.load(r"F:\less\results\cycleGan\11-10_08-59\G_AB_24.pth"))
-G_BA.load_state_dict(torch.load(r"F:\less\results\cycleGan\11-10_08-59\G_BA_24.pth"))
+G_AB.load_state_dict(torch.load(r"F:\less\results\cycleGan\11-11_00-33\G_AB_10.pth"))
+G_BA.load_state_dict(torch.load(r"F:\less\results\cycleGan\11-11_00-33\G_BA_10.pth"))
 
 Tensor = torch.cuda.FloatTensor if cuda else torch.Tensor
 
@@ -97,7 +97,7 @@ dataloader = DataLoader(
 # ----------
 
 if __name__ == '__main__':
-    loss_rec = {"time_AB": [], "time_BA": [], "G_AB_loss": [], "G_AB_loss_r": [], "G_AB_loss_i": [], "G_BA_loss": [], "G_BA_loss_r": [], "G_BA_loss_i": []}
+    loss_rec = {"time_AB": [], "time_BA": [], "G_AB_loss": [], "G_AB_loss_r": [], "G_AB_loss_i": [], "G_BA_loss": []}
     now_time = datetime.datetime.now()
     time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
     log_dir = os.path.join(r"..\results\cycleGan\test", time_str)
@@ -115,8 +115,6 @@ if __name__ == '__main__':
         eval_loss_AB_r = []
         eval_loss_AB_i = []
         eval_loss_BA = []
-        eval_loss_BA_r = []
-        eval_loss_BA_i = []
         times_AB = []
         times_BA = []
         best_times = 1
@@ -144,11 +142,8 @@ if __name__ == '__main__':
             curr_time = time.time()
             times_BA.append(curr_time - prev_time)
             loss = criterion_Vail(fake_A, real_A)
-            loss_r = criterion_Vail(fake_A[:, 0, :, :], real_A[:, 0, :, :])
-            loss_i = criterion_Vail(fake_A[:, 1, :, :], real_A[:, 1, :, :])
             eval_loss_BA.append(loss.item())
-            eval_loss_BA_r.append(loss_r.item())
-            eval_loss_BA_i.append(loss_i.item())
+
 
             batches_done = epoch * len(dataloader) + j
             if batches_done % opt.sample_interval == 0:
@@ -161,24 +156,21 @@ if __name__ == '__main__':
         time_mean_AB = np.mean(times_AB)
 
         eval_mean_BA = np.mean(eval_loss_BA)
-        eval_mean_BA_r = np.mean(eval_loss_BA_r)
-        eval_mean_BA_i = np.mean(eval_loss_BA_i)
         time_mean_BA = np.mean(times_BA)
         if time_mean_AB < best_times:
             best_times = time_mean_AB
         print(
-            "Epoch[{:0>3}/{:0>3}]  time_AB:{:.6f}  loss_AB_valid:{:.9f} loss_AB_valid_r:{:.9f} loss_AB_valid_i:{:.9f}  time_BA:{:.6f}  loss_BA_valid:{:.9f}  loss_BA_valid_r:{:.9f}  loss_BA_valid_i:{:.9f} ".format(
-                epoch, Epoch, time_mean_AB, eval_mean_AB,eval_mean_AB_r,eval_mean_AB_i, time_mean_BA, eval_mean_BA, eval_mean_BA_r, eval_mean_BA_i))
+            "Epoch[{:0>3}/{:0>3}]  time_AB:{:.6f}  loss_AB_valid:{:.9f} loss_AB_valid_r:{:.9f} loss_AB_valid_i:{:.9f}  time_BA:{:.6f}  loss_BA_valid:{:.9f} ".format(
+                epoch, Epoch, time_mean_AB, eval_mean_AB,eval_mean_AB_r,eval_mean_AB_i, time_mean_BA, eval_mean_BA))
 
         # 绘图
         loss_rec["time_AB"].append(time_mean_AB), loss_rec["G_AB_loss"].append(eval_mean_AB),
-        loss_rec["time_BA"].append(time_mean_BA), loss_rec["G_BA_loss"].append(eval_mean_BA)
+        loss_rec["time_BA"].append(time_mean_BA), loss_rec["G_BA_loss"].append(eval_mean_BA),
         loss_rec["G_AB_loss_r"].append(eval_mean_AB_r), loss_rec["G_AB_loss_i"].append(eval_mean_AB_i)
-        loss_rec["G_BA_loss_r"].append(eval_mean_BA_r), loss_rec["G_BA_loss_i"].append(eval_mean_BA_i)
 
         plt_x = np.arange(1, epoch + 2)
         image_save_plot.plot_line_test(plt_x, loss_rec["time_AB"], loss_rec["G_AB_loss"],loss_rec["G_AB_loss_r"],loss_rec["G_AB_loss_i"], loss_rec["time_BA"],
-                                       loss_rec["G_BA_loss"],loss_rec["G_BA_loss_r"],loss_rec["G_BA_loss_i"],
+                                       loss_rec["G_BA_loss"],
                                        out_dir=log_dir)
 
     print(

@@ -67,40 +67,40 @@ class ImagePlotSave:
         fake_B_i = fake_B_i.cpu().squeeze().detach().numpy()
         real_A = real_A.cpu().squeeze().detach().numpy()
         fake_A = fake_A.cpu().squeeze().detach().numpy()
-
+        plt.figure(figsize=(14, 14), dpi=300)
         x1 = plt.subplot(2, 3, 1)
         plt.imshow(real_A)
-        plt.colorbar()
+        plt.colorbar(fraction=0.05, pad=0.05)
         plt.clim(-1, 0)
-        x1.set_title('real_A')
+        x1.set_title('Mask')
         x2 = plt.subplot(2, 3, 2)
         plt.imshow(fake_B_r)
-        plt.colorbar()
+        plt.colorbar(fraction=0.05, pad=0.05)
         plt.clim(-1, 1)
-        x2.set_title('fake_B_r')
+        x2.set_title('Generated real part of NF')
         x3 = plt.subplot(2, 3, 3)
         plt.imshow(fake_B_i)
-        plt.colorbar()
+        plt.colorbar(fraction=0.05, pad=0.05)
         plt.clim(-1.001, -0.95)
-        x3.set_title('fake_B_i')
+        x3.set_title('Generated imaginary part of NF')
         x4 = plt.subplot(2, 3, 4)
         plt.imshow(fake_A)
-        plt.colorbar()
+        plt.colorbar(fraction=0.05, pad=0.05)
         plt.clim(-1, 0)
-        x4.set_title('fake_A')
+        x4.set_title('Generated_Mask')
         x5 = plt.subplot(2, 3, 5)
         plt.imshow(real_B_r)
-        plt.colorbar()
+        plt.colorbar(fraction=0.05, pad=0.05)
         plt.clim(-1, 1)
-        x5.set_title('real_B_r')
+        x5.set_title('real part of NF')
         x6 = plt.subplot(2, 3, 6)
         plt.imshow(real_B_i)
-        plt.colorbar()
+        plt.colorbar(fraction=0.05, pad=0.05)
         plt.clim(-1.001, -0.95)
-        x6.set_title('real_B_i')
+        x6.set_title('imaginary part of NF')
 
-        plt.subplots_adjust(wspace=0.6, hspace=0.6)
-        plt.savefig('%s/%i_%i.png' % (log_dir,epoch, batches_done), bbox_inches='tight')
+        plt.subplots_adjust(wspace=0.4, hspace=0.05)
+        plt.savefig('%s/%i_%i.png' % (log_dir, epoch, batches_done), bbox_inches='tight')
         plt.close()
 
     def plot_line(selft, epoch, loss_G, loss_D, valid_G_AB, train_G_AB, valid_G_BA, train_G_BA, out_dir, mark='all'):
@@ -143,7 +143,8 @@ class ImagePlotSave:
         plt.savefig(os.path.join(out_dir, mark + r'loss.png'))
         plt.close()
 
-    def plot_line_test(selft, epoch, time_mean_AB, eval_mean_AB, eval_mean_AB_r, eval_mean_AB_i, time_mean_BA, eval_mean_BA, eval_mean_BA_r, eval_mean_BA_i, out_dir):
+    def plot_line_test(selft, epoch, time_mean_AB, eval_mean_AB, eval_mean_AB_r, eval_mean_AB_i, time_mean_BA,
+                       eval_mean_BA, out_dir):
         """
         绘制训练和验证集的loss曲线
         """
@@ -173,8 +174,6 @@ class ImagePlotSave:
 
         plt.xlabel('Epoch', fontsize=30)
         plt.plot(epoch, eval_mean_BA, label='G_BA_loss', color='b', marker='o', markerfacecolor='b', markersize=15)
-        plt.plot(epoch, eval_mean_BA_r, label='G_BA_loss_r', color='r', marker='o', markerfacecolor='r', markersize=15)
-        plt.plot(epoch, eval_mean_BA_i, label='G_BA_loss_i', color='y', marker='o', markerfacecolor='y', markersize=15)
         plt.tick_params(labelsize=30)
         # location = 'upper right' if mode == 'loss' else 'upper left'
         plt.legend(loc='best', prop={'size': 30})
