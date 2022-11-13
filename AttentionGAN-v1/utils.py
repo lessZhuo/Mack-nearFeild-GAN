@@ -8,6 +8,7 @@ import torch
 import numpy as np
 import itertools
 import matplotlib.pyplot as plt
+import os
 
 def print_network(net):
     num_params = 0
