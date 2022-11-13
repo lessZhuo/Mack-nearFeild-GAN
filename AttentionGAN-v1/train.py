@@ -60,6 +60,7 @@ parser.add_argument('--pool_size', type=int, default=50,
                     help='the size of image buffer that stores previously generated images')
 parser.add_argument("--img_height", type=int, default=256, help="size of image height")  # 128
 parser.add_argument("--img_width", type=int, default=256, help="size of image width")  # 128
+parser.add_argument('--gan_mode', type=str, default='lsgan', help='the type of GAN objective. [vanilla| lsgan | wgangp]. vanilla GAN loss is the cross-entropy objective used in the original GAN paper.')
 opt = parser.parse_args()
 print(opt)
 
@@ -105,7 +106,7 @@ netD_A.apply(weights_init_normal)
 netD_B.apply(weights_init_normal)
 
 # Lossess
-criterion_GAN = torch.nn.MSELoss()
+criterion_GAN = GANLoss(opt.gan_mode).to(device)
 criterion_cycle = torch.nn.L1Loss()
 criterion_Vail = torch.nn.MSELoss()
 

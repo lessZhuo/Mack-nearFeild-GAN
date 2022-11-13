@@ -5,110 +5,6 @@ import torch.nn.functional as F
 import functools
 
 
-class Generator(nn.Module):
-    def __init__(self, input_nc=3, output_nc=4, ngf=64, norm_layer=nn.BatchNorm2d, use_dropout=False, n_blocks=6):
-        assert (n_blocks >= 0)
-        super(Generator, self).__init__()
-        self.input_nc = input_nc
-        self.output_nc = output_nc
-        self.ngf = ngf
-
-        model = [nn.ReflectionPad2d(3),
-                 nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0),
-                 norm_layer(ngf),
-                 nn.ReLU(True)]
-
-        n_downsampling = 2
-        for i in range(n_downsampling):
-            mult = 2 ** i
-            model += [nn.Conv2d(ngf * mult, ngf * mult * 2, kernel_size=3,
-                                stride=2, padding=1),
-                      norm_layer(ngf * mult * 2),
-                      nn.ReLU(True)]
-
-        mult = 2 ** n_downsampling
-        for i in range(n_blocks):
-            model += [ResnetBlock(ngf * mult, norm_layer=norm_layer, use_dropout=use_dropout)]
-
-        for i in range(n_downsampling):
-            mult = 2 ** (n_downsampling - i)
-            model += [nn.ReflectionPad2d(1),
-                      nn.Conv2d(ngf * mult, int(ngf * mult / 2),
-                                kernel_size=3, stride=1),
-                      norm_layer(int(ngf * mult / 2)),
-                      nn.ReLU(True),
-                      nn.Conv2d(int(ngf * mult / 2), int(ngf * mult / 2) * 4,
-                                kernel_size=1, stride=1),
-                      nn.PixelShuffle(2),
-                      norm_layer(int(ngf * mult / 2)),
-                      nn.ReLU(True),
-                      ]
-        model += [nn.ReflectionPad2d(3)]
-        model += [nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0)]
-
-        self.model = nn.Sequential(*model)
-
-    def forward(self, input):
-        output = self.model(input)
-        attention_mask = F.sigmoid(output[:, :1])
-        content_mask = output[:, 1:]
-        attention_mask = attention_mask.repeat(1, 3, 1, 1)
-        result = content_mask * attention_mask + input * (1 - attention_mask)
-
-        return result, attention_mask, content_mask
-
-
-class ResnetBlock(nn.Module):
-    def __init__(self, dim, norm_layer, use_dropout):
-        super(ResnetBlock, self).__init__()
-        self.conv_block = self.build_conv_block(dim, norm_layer, use_dropout)
-
-    def build_conv_block(self, dim, norm_layer, use_dropout):
-        conv_block = [nn.ReflectionPad2d(1),
-                      nn.Conv2d(dim, dim, kernel_size=3),
-                      norm_layer(dim),
-                      nn.ReLU(True)]
-        if use_dropout:
-            conv_block += [nn.Dropout(0.5)]
-
-        conv_block += [nn.ReflectionPad2d(1),
-                       nn.Conv2d(dim, dim, kernel_size=3),
-                       norm_layer(dim)]
-
-        return nn.Sequential(*conv_block)
-
-    def forward(self, x):
-        out = x + self.conv_block(x)
-        return out
-
-
-class Discriminator(nn.Module):
-    def __init__(self):
-        super(Discriminator, self).__init__()
-        self.conv_tower = nn.Sequential(
-            nn.Conv2d(3, 64, 4, 2),
-            nn.BatchNorm2d(64),
-            nn.LeakyReLU(),
-            nn.Conv2d(64, 128, 4, 2),
-            nn.BatchNorm2d(128),
-            nn.LeakyReLU(),
-            nn.Conv2d(128, 256, 4, 2),
-            nn.BatchNorm2d(256),
-            nn.LeakyReLU(),
-            nn.Conv2d(256, 512, 4, 2),
-            nn.BatchNorm2d(512),
-            nn.LeakyReLU(),
-            nn.Conv2d(512, 512, 4),
-            nn.LeakyReLU(),
-            nn.AdaptiveAvgPool2d((1, 1)),
-            nn.Conv2d(512, 1, 1),
-        )
-
-    def forward(self, img):
-        output = self.conv_tower(img)
-        return output
-
-
 class ResnetGenerator_Attention(nn.Module):
     # initializers
     def __init__(self, input_nc, output_nc, ngf=64, n_blocks=9):
@@ -351,3 +247,72 @@ class NLayerDiscriminator(nn.Module):
     def forward(self, input):
         """Standard forward."""
         return self.model(input)
+
+
+class GANLoss(nn.Module):
+    """Define different GAN objectives.
+
+    The GANLoss class abstracts away the need to create the target label tensor
+    that has the same size as the input.
+    """
+
+    def __init__(self, gan_mode, target_real_label=1.0, target_fake_label=0.0):
+        """ Initialize the GANLoss class.
+
+        Parameters:
+            gan_mode (str) - - the type of GAN objective. It currently supports vanilla, lsgan, and wgangp.
+            target_real_label (bool) - - label for a real image
+            target_fake_label (bool) - - label of a fake image
+
+        Note: Do not use sigmoid as the last layer of Discriminator.
+        LSGAN needs no sigmoid. vanilla GANs will handle it with BCEWithLogitsLoss.
+        """
+        super(GANLoss, self).__init__()
+        self.register_buffer('real_label', torch.tensor(target_real_label))
+        self.register_buffer('fake_label', torch.tensor(target_fake_label))
+        self.gan_mode = gan_mode
+        if gan_mode == 'lsgan':
+            self.loss = nn.MSELoss()
+        elif gan_mode == 'vanilla':
+            self.loss = nn.BCEWithLogitsLoss()
+        elif gan_mode in ['wgangp']:
+            self.loss = None
+        else:
+            raise NotImplementedError('gan mode %s not implemented' % gan_mode)
+
+    def get_target_tensor(self, prediction, target_is_real):
+        """Create label tensors with the same size as the input.
+
+        Parameters:
+            prediction (tensor) - - tpyically the prediction from a discriminator
+            target_is_real (bool) - - if the ground truth label is for real images or fake images
+
+        Returns:
+            A label tensor filled with ground truth label, and with the size of the input
+        """
+
+        if target_is_real:
+            target_tensor = self.real_label
+        else:
+            target_tensor = self.fake_label
+        return target_tensor.expand_as(prediction)
+
+    def __call__(self, prediction, target_is_real):
+        """Calculate loss given Discriminator's output and grount truth labels.
+
+        Parameters:
+            prediction (tensor) - - tpyically the prediction output from a discriminator
+            target_is_real (bool) - - if the ground truth label is for real images or fake images
+
+        Returns:
+            the calculated loss.
+        """
+        if self.gan_mode in ['lsgan', 'vanilla']:
+            target_tensor = self.get_target_tensor(prediction, target_is_real)
+            loss = self.loss(prediction, target_tensor)
+        elif self.gan_mode == 'wgangp':
+            if target_is_real:
+                loss = -prediction.mean()
+            else:
+                loss = prediction.mean()
+        return loss
