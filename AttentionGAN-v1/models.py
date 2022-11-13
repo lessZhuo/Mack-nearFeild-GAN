@@ -157,7 +157,7 @@ class ResnetGenerator_Attention(nn.Module):
         # -----------这里的27是根据3通道扩展9倍 最好设置为chnnal*9---------------------------
         self.deconv3_content = nn.Conv2d(ngf, 27, 7, 1, 0)
 
-        self.deconv3_content = nn.Conv2d(ngf, self.output_nc * 9, 7, 1, 0)
+        self.deconv3_content = nn.Conv2d(ngf, self.output_nc * 10, 7, 1, 0)
 
         self.deconv1_attention = nn.ConvTranspose2d(ngf * 4, ngf * 2, 3, 2, 1, 1)
         self.deconv1_norm_attention = nn.InstanceNorm2d(ngf * 2)
@@ -214,6 +214,7 @@ class ResnetGenerator_Attention(nn.Module):
         image7 = image[:, self.output_nc * 6: self.output_nc * 7, :, :]
         image8 = image[:, self.output_nc * 7: self.output_nc * 8, :, :]
         image9 = image[:, self.output_nc * 8: self.output_nc * 9, :, :]
+        image10 = image[:, self.output_nc * 9: self.output_nc * 10, :, :]
 
         x_attention = F.relu(self.deconv1_norm_attention(self.deconv1_attention(x)))
         x_attention = F.relu(self.deconv2_norm_attention(self.deconv2_attention(x_attention)))
@@ -235,7 +236,7 @@ class ResnetGenerator_Attention(nn.Module):
         attention9_ = attention[:, 8:9, :, :]
         attention10_ = attention[:, 9:10, :, :]
 
-        attention1 = attention1_.repeat(1, 3, 1, 1)
+        attention1 = attention1_.repeat(1, self.output_nc, 1, 1)
         # print(attention1.size())
         attention2 = attention2_.repeat(1, self.output_nc, 1, 1)
         attention3 = attention3_.repeat(1, self.output_nc, 1, 1)
@@ -256,8 +257,8 @@ class ResnetGenerator_Attention(nn.Module):
         output7 = image7 * attention7
         output8 = image8 * attention8
         output9 = image9 * attention9
-        # output10 = image10 * attention10
-        output10 = input * attention10
+        output10 = image10 * attention10
+        # output10 = input * attention10
 
         o = output1 + output2 + output3 + output4 + output5 + output6 + output7 + output8 + output9 + output10
 

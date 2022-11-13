@@ -29,66 +29,75 @@ from utils import print_network
 parser = argparse.ArgumentParser()
 parser.add_argument('--epoch', type=int, default=0, help='starting epoch')
 parser.add_argument('--n_epochs', type=int, default=200, help='number of epochs of training')
-parser.add_argument('--batchSize', type=int, default=1, help='size of the batches')
+parser.add_argument('--batchSize', type=int, default=2, help='size of the batches')
 parser.add_argument('--dataroot', type=str, default='datasets/horse2zebra/', help='root directory of the dataset')
 parser.add_argument('--save_name', type=str, default='ar_neutral2happiness')
 parser.add_argument('--lr', type=float, default=0.0001, help='initial learning rate')
-parser.add_argument('--decay_epoch', type=int, default=100,help='epoch to start linearly decaying the learning rate to 0')
+parser.add_argument('--decay_epoch', type=int, default=100,
+                    help='epoch to start linearly decaying the learning rate to 0')
 parser.add_argument('--size', type=int, default=256, help='size of the data crop (squared assumed)')
-parser.add_argument('--input_nc', type=int, default=3, help='number of channels of input data')
-parser.add_argument('--output_nc', type=int, default=3, help='number of channels of output data')
+parser.add_argument('--input_nc', type=int, default=1, help='number of channels of input data')
+parser.add_argument('--output_nc', type=int, default=2, help='number of channels of output data')
 parser.add_argument('--cuda', action='store_true', help='use GPU computation')
-parser.add_argument('--n_cpu', type=int, default=8, help='number of cpu threads to use during batch generation')
+parser.add_argument('--n_cpu', type=int, default=4, help='number of cpu threads to use during batch generation')
 parser.add_argument('--lambda_cycle', type=int, default=10)
 parser.add_argument('--lambda_identity', type=int, default=0)
 parser.add_argument('--lambda_a', type=int, default=0)
 parser.add_argument('--lambda_b', type=int, default=0)
 parser.add_argument('--lambda_pixel', type=int, default=1)
 parser.add_argument('--lambda_reg', type=float, default=1e-6)
-parser.add_argument('--gan_curriculum', type=int, default=10, help='Strong GAN loss for certain period at the beginning')
-parser.add_argument('--starting_rate', type=float, default=0.01,help='Set the lambda weight between GAN loss and Recon loss during curriculum period at the beginning. We used the 0.01 weight.')
-parser.add_argument('--default_rate', type=float, default=0.5,help='Set the lambda weight between GAN loss and Recon loss after curriculum period. We used the 0.5 weight.')
-parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels: 3 for RGB and 1 for grayscale')
-parser.add_argument('--output_nc', type=int, default=3,help='# of output image channels: 3 for RGB and 1 for grayscale')
-parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in the last conv layer')
-parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in the first conv layer')
-parser.add_argument('--norm', type=str, default='instance',help='instance normalization or batch normalization [instance | batch | none]')
-parser.add_argument('--pool_size', type=int, default=50,help='the size of image buffer that stores previously generated images')
+parser.add_argument('--gan_curriculum', type=int, default=10,
+                    help='Strong GAN loss for certain period at the beginning')
+parser.add_argument('--starting_rate', type=float, default=0.01,
+                    help='Set the lambda weight between GAN loss and Recon loss during curriculum period at the beginning. We used the 0.01 weight.')
+parser.add_argument('--default_rate', type=float, default=0.5,
+                    help='Set the lambda weight between GAN loss and Recon loss after curriculum period. We used the 0.5 weight.')
+parser.add_argument('--ngf', type=int, default=32, help='# of gen filters in the last conv layer')
+parser.add_argument('--ndf', type=int, default=32, help='# of discrim filters in the first conv layer')
+parser.add_argument('--norm', type=str, default='instance',
+                    help='instance normalization or batch normalization [instance | batch | none]')
+parser.add_argument('--pool_size', type=int, default=50,
+                    help='the size of image buffer that stores previously generated images')
 parser.add_argument("--img_height", type=int, default=256, help="size of image height")  # 128
 parser.add_argument("--img_width", type=int, default=256, help="size of image width")  # 128
 opt = parser.parse_args()
 print(opt)
 
-if torch.cuda.is_available() and not opt.cuda:
-    print("WARNING: You have a CUDA device, so you should probably run with --cuda")
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 ###### Definition of variables ######
 # Networks
-netG_A2B = ResnetGenerator_Attention(opt.input_nc, opt.output_nc, opt.ngf, n_blocks=9)
-netG_B2A = ResnetGenerator_Attention(opt.input_nc, opt.output_nc, opt.ngf, n_blocks=9)
+netG_A2B = ResnetGenerator_Attention(opt.input_nc, opt.output_nc, opt.ngf, n_blocks=5)
+netG_B2A = ResnetGenerator_Attention(opt.output_nc, opt.input_nc, opt.ngf, n_blocks=5)
 netD_A = NLayerDiscriminator(opt.input_nc, opt.ndf, n_layers=3, norm_type=opt.norm)
-netD_B = NLayerDiscriminator(opt.input_nc, opt.ndf, n_layers=3, norm_type=opt.norm)
+netD_B = NLayerDiscriminator(opt.output_nc, opt.ndf, n_layers=3, norm_type=opt.norm)
 
-print('---------- Networks initialized -------------')
-print_network(netG_A2B)
-print_network(netG_B2A)
-print_network(netD_A)
-print_network(netD_B)
-print('-----------------------------------------------')
+# print('---------- Networks initialized -------------')
+# print_network(netG_A2B)
+# print_network(netG_B2A)
+# print_network(netD_A)
+# print_network(netD_B)
+# print('-----------------------------------------------')
 
-input_shape = (opt.input_channels, opt.img_height, opt.img_width)
-output_shape = (opt.output_channels, opt.img_height, opt.img_width)
+input_shape = (opt.input_nc, opt.img_height, opt.img_width)
+output_shape = (opt.output_nc, opt.img_height, opt.img_width)
 
 # save image and plot loss line
 image_save_plot = ImagePlotSave(output_shape, input_shape)
 
-if opt.cuda:
+# Lossess
+criterion_GAN = torch.nn.MSELoss()
+criterion_cycle = torch.nn.L1Loss()
+criterion_Vail = torch.nn.MSELoss()
+
+if torch.cuda.is_available():
     netG_A2B.cuda()
     netG_B2A.cuda()
     netD_A.cuda()
     netD_B.cuda()
+    criterion_GAN.cuda()
+    criterion_cycle.cuda()
+    criterion_Vail.cuda()
 
 netG_A2B.apply(weights_init_normal)
 netG_B2A.apply(weights_init_normal)
@@ -116,9 +125,11 @@ lr_scheduler_D_B = torch.optim.lr_scheduler.LambdaLR(optimizer_D_B,
                                                      lr_lambda=LambdaLR(opt.n_epochs, opt.epoch, opt.decay_epoch).step)
 
 # Inputs & targets memory allocation
-Tensor = torch.cuda.FloatTensor if opt.cuda else torch.Tensor
+Tensor = torch.cuda.FloatTensor if torch.cuda.is_available() else torch.Tensor
+
 input_A = Tensor(opt.batchSize, opt.input_nc, opt.size, opt.size)
 input_B = Tensor(opt.batchSize, opt.output_nc, opt.size, opt.size)
+
 target_real = Variable(Tensor(opt.batchSize).fill_(1.0), requires_grad=False)
 target_fake = Variable(Tensor(opt.batchSize).fill_(0.0), requires_grad=False)
 
@@ -135,13 +146,10 @@ transforms_ = [
     transforms.Normalize([1], [1])
 ]
 
-dataloader = DataLoader(ImageDataset(opt.dataroot, transforms_=transforms_, unaligned=True),
-                        batch_size=opt.batchSize, shuffle=True, num_workers=opt.n_cpu)
-
 # Training data loader
 dataloader = DataLoader(
     MaskNfDataset("../datasets/crop_256", transforms_=transforms_, combine=True, direction="x"),
-    batch_size=opt.batch_size,
+    batch_size=opt.batchSize,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
@@ -171,6 +179,7 @@ def set_requires_grad(nets, requires_grad=False):
 
 if __name__ == '__main__':
 
+    print(device)
     loss_rec = {"loss_D": [], "loss_G": [], "loss_G_AB_valid": [], "loss_G_AB_train": [], "loss_G_BA_valid": [],
                 "loss_G_BA_train": []}
     now_time = datetime.datetime.now()
@@ -221,10 +230,11 @@ if __name__ == '__main__':
             set_requires_grad([netD_A, netD_B], False)
 
             optimizer_G.zero_grad()
+            temp1 = netD_A(fake_A)
 
-            loss_G_A = criterion_GAN(netD_A(fake_B), target_real)
+            loss_G_A = criterion_GAN(netD_A(fake_A), True)
             # GAN loss D_B(G_B(B))
-            loss_G_B = criterion_GAN(netD_B(fake_A), target_real)
+            loss_G_B = criterion_GAN(netD_B(fake_B), True)
             # Forward cycle loss || G_B(G_A(A)) - A||
             loss_cycle_A = criterion_cycle(rec_A, real_A)
             # Backward cycle loss || G_A(G_B(B)) - B||
@@ -248,12 +258,12 @@ if __name__ == '__main__':
 
             # Real loss
             pred_real_A = netD_A.forward(real_A)
-            loss_D_real_A = criterion_GAN(pred_real_A, target_real)
+            loss_D_real_A = criterion_GAN(pred_real_A, True)
 
             # Fake loss
             fake_A = fake_A_buffer.query(fake_A)
             pred_fake_A = netD_A.forward(fake_A.detach())
-            loss_D_fake_A = criterion_GAN(pred_fake_A, target_fake)
+            loss_D_fake_A = criterion_GAN(pred_fake_A, False)
 
             loss_D_A = (loss_D_real_A + loss_D_fake_A) / 2
 
@@ -266,12 +276,12 @@ if __name__ == '__main__':
 
             # Real loss
             pred_real_B = netD_B.forward(real_B)
-            loss_D_real_B = criterion_GAN(pred_real_B, target_real)
+            loss_D_real_B = criterion_GAN(pred_real_B, True)
 
             # Fake loss
             fake_B = fake_B_buffer.query(fake_B)
             pred_fake_B = netD_B.forward(fake_B.detach())
-            loss_D_fake_B = criterion_GAN(pred_fake_B, target_fake)
+            loss_D_fake_B = criterion_GAN(pred_fake_B, False)
 
             loss_D_B = (loss_D_real_B + loss_D_fake_B) / 2
 
@@ -326,8 +336,9 @@ if __name__ == '__main__':
             if batches_done % opt.sample_interval == 0:
                 image_save_plot.sample_images(epoch, batches_done, log_dir, real_A=real_A, real_B=real_B, fake_A=fake_A,
                                               fake_B=fake_B)
-        print("Epoch[{:0>3}/{:0>3}]  train_AB_loss:{:.6f}  train_BA_loss:{:.6f} ".format(epoch, opt.n_epochs, train_mean_AB,
-                                                                                        train_mean_BA))
+        print("Epoch[{:0>3}/{:0>3}]  train_AB_loss:{:.6f}  train_BA_loss:{:.6f} ".format(epoch, opt.n_epochs,
+                                                                                         train_mean_AB,
+                                                                                         train_mean_BA))
 
         # --------------
         #  vail Progress
@@ -401,17 +412,14 @@ if __name__ == '__main__':
     time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
     print(time_str)
 
-
-
-            # save_image(torch.cat([
-            #     real_A.data.cpu()[0] * 0.5 + 0.5,
-            #     mask_B.data.cpu()[0],
-            #     fake_B.data.cpu()[0] * 0.5 + 0.5, temp_B.data.cpu()[0] * 0.5 + 0.5], 2),
-            #     '%s/%04d_%04d_progress_B.png' % (save_path, epoch + 1, i + 1))
-            #
-            # save_image(torch.cat([
-            #     real_B.data.cpu()[0] * 0.5 + 0.5,
-            #     mask_A.data.cpu()[0],
-            #     fake_A.data.cpu()[0] * 0.5 + 0.5, temp_A.data.cpu()[0] * 0.5 + 0.5], 2),
-            #     '%s/%04d_%04d_progress_A.png' % (save_path, epoch + 1, i + 1))
-
+    # save_image(torch.cat([
+    #     real_A.data.cpu()[0] * 0.5 + 0.5,
+    #     mask_B.data.cpu()[0],
+    #     fake_B.data.cpu()[0] * 0.5 + 0.5, temp_B.data.cpu()[0] * 0.5 + 0.5], 2),
+    #     '%s/%04d_%04d_progress_B.png' % (save_path, epoch + 1, i + 1))
+    #
+    # save_image(torch.cat([
+    #     real_B.data.cpu()[0] * 0.5 + 0.5,
+    #     mask_A.data.cpu()[0],
+    #     fake_A.data.cpu()[0] * 0.5 + 0.5, temp_A.data.cpu()[0] * 0.5 + 0.5], 2),
+    #     '%s/%04d_%04d_progress_A.png' % (save_path, epoch + 1, i + 1))

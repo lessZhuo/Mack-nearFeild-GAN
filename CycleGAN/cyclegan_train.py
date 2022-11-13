@@ -74,6 +74,7 @@ if cuda:
     criterion_GAN.cuda()
     criterion_cycle.cuda()
     criterion_identity.cuda()
+    criterion_Vail.cuda()
 
 if opt.epoch != 0:
     # Load pretrained models
