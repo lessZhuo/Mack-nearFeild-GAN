@@ -7,7 +7,7 @@ from torch.autograd import Variable
 import torch
 import numpy as np
 import itertools
-
+import matplotlib.pyplot as plt
 
 def print_network(net):
     num_params = 0
@@ -61,13 +61,23 @@ class LambdaLR():
         return 1.0 - max(0, epoch + self.offset - self.decay_start_epoch) / (self.n_epochs - self.decay_start_epoch)
 
 
+# def weights_init_normal(m):
+#     classname = m.__class__.__name__
+#     if classname.find('Conv') != -1:
+#         torch.nn.init.normal(m.weight.data, 0.0, 0.02)
+#     elif classname.find('BatchNorm2d') != -1:
+#         torch.nn.init.normal(m.weight.data, 1.0, 0.02)
+#         torch.nn.init.constant(m.bias.data, 0.0)
+
 def weights_init_normal(m):
     classname = m.__class__.__name__
-    if classname.find('Conv') != -1:
-        torch.nn.init.normal(m.weight.data, 0.0, 0.02)
-    elif classname.find('BatchNorm2d') != -1:
-        torch.nn.init.normal(m.weight.data, 1.0, 0.02)
-        torch.nn.init.constant(m.bias.data, 0.0)
+    if classname.find("Conv") != -1:
+        torch.nn.init.normal_(m.weight.data, 0.0, 0.02)
+        if hasattr(m, "bias") and m.bias is not None:
+            torch.nn.init.constant_(m.bias.data, 0.0)
+    elif classname.find("BatchNorm2d") != -1:
+        torch.nn.init.normal_(m.weight.data, 1.0, 0.02)
+        torch.nn.init.constant_(m.bias.data, 0.0)
 
 
 class ImagePool():

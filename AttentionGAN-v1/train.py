@@ -19,8 +19,6 @@ from utils import *
 from datasets import *
 import functools
 
-from models import Generator
-from models import Discriminator
 from utils import ReplayBuffer
 from utils import LambdaLR
 from utils import weights_init_normal
