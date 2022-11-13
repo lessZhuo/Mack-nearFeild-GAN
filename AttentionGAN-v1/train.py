@@ -23,7 +23,6 @@ from models import Generator
 from models import Discriminator
 from utils import ReplayBuffer
 from utils import LambdaLR
-from utils import Logger
 from utils import weights_init_normal
 from utils import print_network
 
@@ -34,8 +33,7 @@ parser.add_argument('--batchSize', type=int, default=1, help='size of the batche
 parser.add_argument('--dataroot', type=str, default='datasets/horse2zebra/', help='root directory of the dataset')
 parser.add_argument('--save_name', type=str, default='ar_neutral2happiness')
 parser.add_argument('--lr', type=float, default=0.0001, help='initial learning rate')
-parser.add_argument('--decay_epoch', type=int, default=100,
-                    help='epoch to start linearly decaying the learning rate to 0')
+parser.add_argument('--decay_epoch', type=int, default=100,help='epoch to start linearly decaying the learning rate to 0')
 parser.add_argument('--size', type=int, default=256, help='size of the data crop (squared assumed)')
 parser.add_argument('--input_nc', type=int, default=3, help='number of channels of input data')
 parser.add_argument('--output_nc', type=int, default=3, help='number of channels of output data')
@@ -47,21 +45,15 @@ parser.add_argument('--lambda_a', type=int, default=0)
 parser.add_argument('--lambda_b', type=int, default=0)
 parser.add_argument('--lambda_pixel', type=int, default=1)
 parser.add_argument('--lambda_reg', type=float, default=1e-6)
-parser.add_argument('--gan_curriculum', type=int, default=10,
-                    help='Strong GAN loss for certain period at the beginning')
-parser.add_argument('--starting_rate', type=float, default=0.01,
-                    help='Set the lambda weight between GAN loss and Recon loss during curriculum period at the beginning. We used the 0.01 weight.')
-parser.add_argument('--default_rate', type=float, default=0.5,
-                    help='Set the lambda weight between GAN loss and Recon loss after curriculum period. We used the 0.5 weight.')
+parser.add_argument('--gan_curriculum', type=int, default=10, help='Strong GAN loss for certain period at the beginning')
+parser.add_argument('--starting_rate', type=float, default=0.01,help='Set the lambda weight between GAN loss and Recon loss during curriculum period at the beginning. We used the 0.01 weight.')
+parser.add_argument('--default_rate', type=float, default=0.5,help='Set the lambda weight between GAN loss and Recon loss after curriculum period. We used the 0.5 weight.')
 parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels: 3 for RGB and 1 for grayscale')
-parser.add_argument('--output_nc', type=int, default=3,
-                    help='# of output image channels: 3 for RGB and 1 for grayscale')
+parser.add_argument('--output_nc', type=int, default=3,help='# of output image channels: 3 for RGB and 1 for grayscale')
 parser.add_argument('--ngf', type=int, default=64, help='# of gen filters in the last conv layer')
 parser.add_argument('--ndf', type=int, default=64, help='# of discrim filters in the first conv layer')
-parser.add_argument('--norm', type=str, default='instance',
-                    help='instance normalization or batch normalization [instance | batch | none]')
-parser.add_argument('--pool_size', type=int, default=50,
-                    help='the size of image buffer that stores previously generated images')
+parser.add_argument('--norm', type=str, default='instance',help='instance normalization or batch normalization [instance | batch | none]')
+parser.add_argument('--pool_size', type=int, default=50,help='the size of image buffer that stores previously generated images')
 parser.add_argument("--img_height", type=int, default=256, help="size of image height")  # 128
 parser.add_argument("--img_width", type=int, default=256, help="size of image width")  # 128
 opt = parser.parse_args()
@@ -106,7 +98,6 @@ netD_B.apply(weights_init_normal)
 # Lossess
 criterion_GAN = torch.nn.MSELoss()
 criterion_cycle = torch.nn.L1Loss()
-criterion_identity = torch.nn.L1Loss()
 criterion_Vail = torch.nn.MSELoss()
 
 # Optimizers & LR schedulers
@@ -140,7 +131,9 @@ fake_B_buffer = ImagePool(opt.pool_size)
 # Dataset loader
 transforms_ = [
     transforms.ToTensor(),
-    transforms.Normalize([0.5, 0.5, 0.5], [0.5, 0.5, 0.5])]
+    # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    transforms.Normalize([1], [1])
+]
 
 dataloader = DataLoader(ImageDataset(opt.dataroot, transforms_=transforms_, unaligned=True),
                         batch_size=opt.batchSize, shuffle=True, num_workers=opt.n_cpu)
@@ -161,9 +154,6 @@ val_dataloader = DataLoader(
     num_workers=1,
 )
 
-# Loss plot
-logger = Logger(opt.n_epochs, len(dataloader))
-
 
 def set_requires_grad(nets, requires_grad=False):
     """Set requies_grad=Fasle for all the networks to avoid unnecessary computations
@@ -180,6 +170,7 @@ def set_requires_grad(nets, requires_grad=False):
 
 
 if __name__ == '__main__':
+
     loss_rec = {"loss_D": [], "loss_G": [], "loss_G_AB_valid": [], "loss_G_AB_train": [], "loss_G_BA_valid": [],
                 "loss_G_BA_train": []}
     now_time = datetime.datetime.now()
@@ -235,9 +226,9 @@ if __name__ == '__main__':
             # GAN loss D_B(G_B(B))
             loss_G_B = criterion_GAN(netD_B(fake_A), target_real)
             # Forward cycle loss || G_B(G_A(A)) - A||
-            loss_cycle_A = criterion_cycle(rec_A, real_A) * opt.lambda_A
+            loss_cycle_A = criterion_cycle(rec_A, real_A)
             # Backward cycle loss || G_A(G_B(B)) - B||
-            loss_cycle_B = criterion_cycle(rec_B, real_B) * opt.lambda_B
+            loss_cycle_B = criterion_cycle(rec_B, real_B)
 
             loss_GAN = (loss_G_A + loss_G_B) / 2
             loss_cycle = (loss_cycle_B + loss_cycle_A) / 2
@@ -335,7 +326,7 @@ if __name__ == '__main__':
             if batches_done % opt.sample_interval == 0:
                 image_save_plot.sample_images(epoch, batches_done, log_dir, real_A=real_A, real_B=real_B, fake_A=fake_A,
                                               fake_B=fake_B)
-        print("Epoch[{:0>3}/{:0>3}]  train_AB_loss:{:.6f}  trainBA_loss:{:.6f} ".format(epoch, opt.n_epochs, train_mean_AB,
+        print("Epoch[{:0>3}/{:0>3}]  train_AB_loss:{:.6f}  train_BA_loss:{:.6f} ".format(epoch, opt.n_epochs, train_mean_AB,
                                                                                         train_mean_BA))
 
         # --------------
