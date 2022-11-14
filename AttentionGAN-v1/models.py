@@ -53,7 +53,7 @@ class ResnetGenerator_Attention(nn.Module):
         # -----------这里的27是根据3通道扩展9倍 最好设置为chnnal*9---------------------------
         self.deconv3_content = nn.Conv2d(ngf, 27, 7, 1, 0)
 
-        self.deconv3_content = nn.Conv2d(ngf, self.output_nc * 10, 7, 1, 0)
+        self.deconv3_content = nn.Conv2d(ngf, self.output_nc * 9, 7, 1, 0)
 
         self.deconv1_attention = nn.ConvTranspose2d(ngf * 4, ngf * 2, 3, 2, 1, 1)
         self.deconv1_norm_attention = nn.InstanceNorm2d(ngf * 2)
@@ -63,6 +63,8 @@ class ResnetGenerator_Attention(nn.Module):
         self.deconv3_attention = nn.Conv2d(ngf, 10, 1, 1, 0)
 
         self.tanh = torch.nn.Tanh()
+
+        self.input_content = nn.ConvTranspose2d(input_nc, output_nc, 1, 1)
 
     # weight_init
     def weight_init(self, mean, std):
@@ -76,30 +78,16 @@ class ResnetGenerator_Attention(nn.Module):
         x = F.relu(self.conv2_norm(self.conv2(x)))
         x = F.relu(self.conv3_norm(self.conv3(x)))
         x = self.resnet_blocks(x)
-        # x = self.resnet_blocks1(x)
-        # x = self.resnet_blocks2(x)
-        # x = self.resnet_blocks3(x)
-        # x = self.resnet_blocks4(x)
-        # x = self.resnet_blocks5(x)
-        # x = self.resnet_blocks6(x)
-        # x = self.resnet_blocks7(x)
-        # x = self.resnet_blocks8(x)
-        # x = self.resnet_blocks9(x)
+
+        input_content = self.input_content(input)
+        # 后面不行考虑用激活函数
+        # input_content = self.tanh(input_content)
+
         x_content = F.relu(self.deconv1_norm_content(self.deconv1_content(x)))
         x_content = F.relu(self.deconv2_norm_content(self.deconv2_content(x_content)))
         x_content = F.pad(x_content, (3, 3, 3, 3), 'reflect')
         content = self.deconv3_content(x_content)
         image = self.tanh(content)
-        # ----------------------------------------------------这里要修改通道 原本图像是3通道，要改为2通道
-        # image1 = image[:, 0:3, :, :]
-        # image2 = image[:, 3:6, :, :]
-        # image3 = image[:, 6:9, :, :]
-        # image4 = image[:, 9:12, :, :]
-        # image5 = image[:, 12:15, :, :]
-        # image6 = image[:, 15:18, :, :]
-        # image7 = image[:, 18:21, :, :]
-        # image8 = image[:, 21:24, :, :]
-        # image9 = image[:, 24:27, :, :]
 
         image1 = image[:, self.output_nc * 0: self.output_nc * 1, :, :]
         image2 = image[:, self.output_nc * 1: self.output_nc * 2, :, :]
@@ -110,12 +98,10 @@ class ResnetGenerator_Attention(nn.Module):
         image7 = image[:, self.output_nc * 6: self.output_nc * 7, :, :]
         image8 = image[:, self.output_nc * 7: self.output_nc * 8, :, :]
         image9 = image[:, self.output_nc * 8: self.output_nc * 9, :, :]
-        image10 = image[:, self.output_nc * 9: self.output_nc * 10, :, :]
 
         x_attention = F.relu(self.deconv1_norm_attention(self.deconv1_attention(x)))
         x_attention = F.relu(self.deconv2_norm_attention(self.deconv2_attention(x_attention)))
-        # x_attention = F.pad(x_attention, (3, 3, 3, 3), 'reflect')
-        # print(x_attention.size()) [1, 64, 256, 256]
+
         attention = self.deconv3_attention(x_attention)
 
         softmax_ = torch.nn.Softmax(dim=1)
@@ -133,7 +119,6 @@ class ResnetGenerator_Attention(nn.Module):
         attention10_ = attention[:, 9:10, :, :]
 
         attention1 = attention1_.repeat(1, self.output_nc, 1, 1)
-        # print(attention1.size())
         attention2 = attention2_.repeat(1, self.output_nc, 1, 1)
         attention3 = attention3_.repeat(1, self.output_nc, 1, 1)
         attention4 = attention4_.repeat(1, self.output_nc, 1, 1)
@@ -153,7 +138,7 @@ class ResnetGenerator_Attention(nn.Module):
         output7 = image7 * attention7
         output8 = image8 * attention8
         output9 = image9 * attention9
-        output10 = image10 * attention10
+        output10 = input_content * attention10
         # output10 = input * attention10
 
         o = output1 + output2 + output3 + output4 + output5 + output6 + output7 + output8 + output9 + output10
