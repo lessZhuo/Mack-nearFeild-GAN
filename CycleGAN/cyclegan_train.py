@@ -1,5 +1,5 @@
 import argparse
-
+import torch.nn.functional as F
 import numpy as np
 import math
 import itertools
@@ -49,6 +49,8 @@ os.makedirs("../result/cycleGan/saved_models/%s" % opt.dataset_name, exist_ok=Tr
 criterion_GAN = torch.nn.MSELoss()
 criterion_cycle = torch.nn.L1Loss()
 criterion_identity = torch.nn.L1Loss()
+# ---------------------验证2分类的损失函数------------------------
+criterion_N = torch.nn.NLLLoss()
 
 cuda = torch.cuda.is_available()
 Epoch = opt.n_epochs
@@ -60,6 +62,8 @@ output_shape = (opt.output_channels, opt.img_height, opt.img_width)
 # Initialize generator and discriminator --- 网络模型
 G_AB = GeneratorResNet(input_shape, output_shape, opt.n_residual_blocks)
 G_BA = GeneratorResNet(output_shape, input_shape, opt.n_residual_blocks)
+# ----------------测试反向生成为2分类分割问题------------------------
+# G_BA = GeneratorResNet(output_shape, output_shape, opt.n_residual_blocks)
 D_A = Discriminator(input_shape)
 D_B = Discriminator(output_shape)
 
@@ -75,6 +79,7 @@ if cuda:
     criterion_cycle.cuda()
     criterion_identity.cuda()
     criterion_Vail.cuda()
+    criterion_N.cuda()
 
 if opt.epoch != 0:
     # Load pretrained models
@@ -201,14 +206,19 @@ if __name__ == '__main__':
             # GAN loss
             fake_B = G_AB(real_A)
             loss_GAN_AB = criterion_GAN(D_B(fake_B), valid)
+            # ==========================修改01===========================
             fake_A = G_BA(real_B)
+            fake_A = fake_A.max(dim=1)[1].data.unsqueeze(1)
+
             loss_GAN_BA = criterion_GAN(D_A(fake_A), valid)
 
             loss_GAN = loss_GAN_AB * proportion + loss_GAN_BA * (1 - proportion)
 
             # Cycle loss
             recov_A = G_BA(fake_B)
-            loss_cycle_A = criterion_cycle(recov_A, real_A)
+            # loss_cycle_A = criterion_cycle(recov_A, real_A)
+            # ==========================修改02===========================
+            loss_cycle_A = criterion_N(recov_A, real_A)
             recov_B = G_AB(fake_A)
             loss_cycle_B = criterion_cycle(recov_B, real_B)
 
@@ -297,11 +307,12 @@ if __name__ == '__main__':
 
             fake_B = net_G_AB(real_A)
             fake_A = net_G_BA(real_B)
+            fake_A = fake_A.max(dim=1)[1].data.unsqueeze(1)
 
             loss_AB = criterion_Vail(fake_B, real_B)
             train_loss_AB.append(loss_AB.item())
 
-            loss_BA = criterion_Vail(fake_A, real_A)
+            loss_BA = criterion_N(fake_A, real_A)
             train_loss_BA.append(loss_BA.item())
 
             train_mean_AB = np.mean(train_loss_AB)
@@ -333,7 +344,7 @@ if __name__ == '__main__':
             loss_G_AB = criterion_Vail(fake_B, real_B)
             eval_loss_G_AB.append(loss_G_AB.item())
 
-            loss_G_BA = criterion_Vail(fake_A, real_A)
+            loss_G_BA = criterion_N(fake_A, real_A)
             eval_loss_G_BA.append(loss_G_BA.item())
 
         G_mean = np.mean(G_loss)

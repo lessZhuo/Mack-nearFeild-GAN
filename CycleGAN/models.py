@@ -38,9 +38,9 @@ class ResidualBlock(nn.Module):
 
 
 class GeneratorResNet(nn.Module):
-    def __init__(self, input_shape, output_shape, num_residual_blocks):
+    def __init__(self, input_shape, output_shape, num_residual_blocks, fw=False):
         super(GeneratorResNet, self).__init__()
-
+        self.fw = fw
         input_channels = input_shape[0]
         output_channels = output_shape[0]
 
@@ -86,13 +86,21 @@ class GeneratorResNet(nn.Module):
         model += [nn.ReflectionPad2d(1),
                   nn.Conv2d(out_features, 16, 2),
                   nn.Tanh(),
-                  nn.Conv2d(16, output_channels, 2),
-                  nn.Tanh()]
+                  nn.Conv2d(16, output_channels, 2)]
+
+        if fw:
+            model += nn.Tanh()
 
         self.model = nn.Sequential(*model)
 
     def forward(self, x):
-        return self.model(x)
+
+        x = self.model(x)
+        if self.fw:
+            return x
+        else:
+            x = F.log_softmax(x, dim=1)
+            return x
 
 
 ##############################
