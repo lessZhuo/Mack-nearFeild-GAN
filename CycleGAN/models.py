@@ -38,7 +38,7 @@ class ResidualBlock(nn.Module):
 
 
 class GeneratorResNet(nn.Module):
-    def __init__(self, input_shape, output_shape, num_residual_blocks, fw=False):
+    def __init__(self, input_shape, output_shape, num_residual_blocks, fw=True):
         super(GeneratorResNet, self).__init__()
         self.fw = fw
         input_channels = input_shape[0]

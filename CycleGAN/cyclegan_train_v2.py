@@ -35,7 +35,7 @@ parser.add_argument("--checkpoint_interval", type=int, default=-1, help="interva
 parser.add_argument("--n_residual_blocks", type=int, default=5, help="number of residual blocks in generator")
 parser.add_argument("--lambda_cyc", type=float, default=10.0, help="cycle loss weight")
 parser.add_argument("--lambda_id", type=float, default=5.0, help="identity loss weight")
-parser.add_argument("--input_channels", type=int, default=1, help="number of input channels")
+parser.add_argument("--input_channels", type=int, default=2, help="number of input channels")
 parser.add_argument("--output_channels", type=int, default=2, help="number of image channels")
 parser.add_argument("--proportion", type=float, default=0.5, help="proportion of A to B loss in total loss ")
 opt = parser.parse_args()
@@ -49,6 +49,7 @@ os.makedirs("../result/cycleGan/saved_models/%s" % opt.dataset_name, exist_ok=Tr
 criterion_GAN = torch.nn.MSELoss()
 criterion_cycle = torch.nn.L1Loss()
 criterion_identity = torch.nn.L1Loss()
+criterion_NLL = torch.nn.NLLLoss()
 
 cuda = torch.cuda.is_available()
 Epoch = opt.n_epochs
@@ -58,8 +59,8 @@ input_shape = (opt.input_channels, opt.img_height, opt.img_width)
 output_shape = (opt.output_channels, opt.img_height, opt.img_width)
 
 # Initialize generator and discriminator --- 网络模型
-G_AB = GeneratorResNet(input_shape, output_shape, opt.n_residual_blocks)
-G_BA = GeneratorResNet(output_shape, input_shape, opt.n_residual_blocks)
+G_AB = GeneratorResNet(input_shape, output_shape, opt.n_residual_blocks, fw=True)
+G_BA = GeneratorResNet(output_shape, input_shape, opt.n_residual_blocks, fw=False)
 # ----------------测试反向生成为2分类分割问题------------------------
 # G_BA = GeneratorResNet(output_shape, output_shape, opt.n_residual_blocks)
 D_A = Discriminator(input_shape)
@@ -77,6 +78,7 @@ if cuda:
     criterion_cycle.cuda()
     criterion_identity.cuda()
     criterion_Vail.cuda()
+    criterion_NLL.cuda()
 
 if opt.epoch != 0:
     # Load pretrained models
@@ -179,6 +181,7 @@ if __name__ == '__main__':
             # Set model input
             real_A = Variable(batch["A"].type(Tensor))
             real_B = Variable(batch["B"].type(Tensor))
+            real_A_label = Variable(batch["C"].type(Tensor))
 
             # Adversarial ground truths
             valid = Variable(Tensor(np.ones((real_A.size(0), *D_A.output_shape))), requires_grad=False)
@@ -203,7 +206,6 @@ if __name__ == '__main__':
             # GAN loss
             fake_B = G_AB(real_A)
             loss_GAN_AB = criterion_GAN(D_B(fake_B), valid)
-
             fake_A = G_BA(real_B)
             loss_GAN_BA = criterion_GAN(D_A(fake_A), valid)
 
@@ -211,8 +213,7 @@ if __name__ == '__main__':
 
             # Cycle loss
             recov_A = G_BA(fake_B)
-            loss_cycle_A = criterion_cycle(recov_A, real_A)
-
+            loss_cycle_A = criterion_NLL(recov_A, real_A_label)
             recov_B = G_AB(fake_A)
             loss_cycle_B = criterion_cycle(recov_B, real_B)
 
@@ -305,7 +306,7 @@ if __name__ == '__main__':
             loss_AB = criterion_Vail(fake_B, real_B)
             train_loss_AB.append(loss_AB.item())
 
-            loss_BA = criterion_cycle(fake_A, real_A)
+            loss_BA = criterion_NLL(fake_A, real_A_label)
             train_loss_BA.append(loss_BA.item())
 
             train_mean_AB = np.mean(train_loss_AB)
@@ -337,7 +338,7 @@ if __name__ == '__main__':
             loss_G_AB = criterion_Vail(fake_B, real_B)
             eval_loss_G_AB.append(loss_G_AB.item())
 
-            loss_G_BA = criterion_cycle(fake_A, real_A)
+            loss_G_BA = criterion_NLL(fake_A, real_A_label)
             eval_loss_G_BA.append(loss_G_BA.item())
 
         G_mean = np.mean(G_loss)
