@@ -15,7 +15,9 @@ from models import *
 from datasets import *
 from utils import *
 import torch
+from evalution_segmentaion import eval_semantic_segmentation
 
+os.environ["CUDA_VISIBLE_DEVICES"] = "1,0"
 # ---------------------------------参数设置---------------------------------------------
 
 parser = argparse.ArgumentParser()
@@ -118,7 +120,7 @@ fake_A_buffer = ReplayBuffer()
 fake_B_buffer = ReplayBuffer()
 
 # save image and plot loss line
-image_save_plot = ImagePlotSave(output_shape, input_shape)
+image_save_plot = ImagePlotSaveV2(output_shape, input_shape)
 
 # transformations
 transforms_ = [
@@ -129,14 +131,14 @@ transforms_ = [
 
 # Training data loader
 dataloader = DataLoader(
-    MaskNfDataset("../datasets/crop_256", transforms_=transforms_, combine=True, direction="x"),
+    MaskNfDatasetV2("../datasets/crop_256", transforms_=transforms_, combine=True, direction="x"),
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
 # Test data loader
 val_dataloader = DataLoader(
-    MaskNfDataset("../datasets/crop_256", transforms_=transforms_, mode="test", combine=True,
+    MaskNfDatasetV2("../datasets/crop_256", transforms_=transforms_, mode="test", combine=True,
                   direction="x"),
     batch_size=1,
     shuffle=True,
@@ -158,7 +160,7 @@ proportion = opt.proportion
 if __name__ == '__main__':
     print(device)
     loss_rec = {"loss_D": [], "loss_G": [], "loss_G_AB_valid": [], "loss_G_AB_train": [], "loss_G_BA_valid": [],
-                "loss_G_BA_train": []}
+                "loss_G_BA_train": [], "G_BA_Miou_train": [], "G_BA_Miou_valid": []}
     now_time = datetime.datetime.now()
     time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
     log_dir = os.path.join("../results/", "cycleGan", time_str)
@@ -169,11 +171,17 @@ if __name__ == '__main__':
     # i, batch = next(enumerate(dataloader))
     best_acc, best_epoch = 0, 0
     best_loss = 0.01
+    best_miou = 0
+
+
     for epoch in range(opt.epoch, opt.n_epochs):
         D_loss = []
         G_loss = []
         train_loss_AB = []
         train_loss_BA = []
+        train_acc = 0
+        train_miou = 0
+        train_class_acc = 0
         torch.cuda.empty_cache()
         for i, batch in enumerate(dataloader):
             # 清除缓存
@@ -181,7 +189,7 @@ if __name__ == '__main__':
             # Set model input
             real_A = Variable(batch["A"].type(Tensor))
             real_B = Variable(batch["B"].type(Tensor))
-            real_A_label = Variable(batch["C"].type(Tensor))
+            real_A_label = Variable(batch["C"].type(Tensor).long())
 
             # Adversarial ground truths
             valid = Variable(Tensor(np.ones((real_A.size(0), *D_A.output_shape))), requires_grad=False)
@@ -213,6 +221,7 @@ if __name__ == '__main__':
 
             # Cycle loss
             recov_A = G_BA(fake_B)
+
             loss_cycle_A = criterion_NLL(recov_A, real_A_label)
             recov_B = G_AB(fake_A)
             loss_cycle_B = criterion_cycle(recov_B, real_B)
@@ -309,15 +318,27 @@ if __name__ == '__main__':
             loss_BA = criterion_NLL(fake_A, real_A_label)
             train_loss_BA.append(loss_BA.item())
 
+            pre_label = fake_A.max(dim=1)[1].data.cpu().numpy()
+            pre_label = [i for i in pre_label]
+
+            true_label = real_A_label.data.cpu().numpy()
+            true_label = [i for i in true_label]
+
+            eval_metrix = eval_semantic_segmentation(pre_label, true_label)
+            train_acc += eval_metrix['mean_class_accuracy']
+            train_miou += eval_metrix['miou']
+            train_class_acc += eval_metrix['class_accuracy']
+
             train_mean_AB = np.mean(train_loss_AB)
             train_mean_BA = np.mean(train_loss_BA)
+            train_mean_miou = train_miou / len(dataloader)
 
             # If at sample interval save image
             if batches_done % opt.sample_interval == 0:
-                image_save_plot.sample_images(epoch, batches_done, log_dir, real_A=real_A, real_B=real_B, fake_A=fake_A,
+                image_save_plot.sample_images_v2(epoch, batches_done, log_dir, real_A=real_A, real_B=real_B, fake_A=fake_A,
                                               fake_B=fake_B)
-        print("Epoch[{:0>3}/{:0>3}]  train_AB_loss:{:.6f}  trainBA_loss:{:.6f} ".format(epoch, Epoch, train_mean_AB,
-                                                                                        train_mean_BA))
+        print("Epoch[{:0>3}/{:0>3}]  train_AB_loss:{:.6f}  trainBA_loss:{:.6f} Miou :{:.6f}: ".format(epoch, Epoch, train_mean_AB,
+                                                                                        train_mean_BA, train_mean_miou))
 
         # --------------
         #  vail Progress
@@ -327,16 +348,32 @@ if __name__ == '__main__':
         net_G_BA_v = G_BA.eval()
         eval_loss_G_AB = []
         eval_loss_G_BA = []
+        eval_acc = 0
+        eval_miou = 0
+        eval_class_acc = 0
         # 验证用论文的函数验证 MSE验证
         for j, sample in enumerate(val_dataloader):
-            real_A = Variable(sample['A'].to(device))
+            real_A = Variable(sample['A'].to(device).float())
             real_B = Variable(sample['B'].to(device))
+            real_A_label = Variable(sample['C'].to(device))
 
             fake_B = net_G_AB_v(real_A)
             fake_A = net_G_BA_v(real_B)
 
             loss_G_AB = criterion_Vail(fake_B, real_B)
             eval_loss_G_AB.append(loss_G_AB.item())
+
+            # 评估 mask 的参数 采用miou评估
+            pre_label = fake_A.max(dim=1)[1].data.cpu().numpy()
+            pre_label = [i for i in pre_label]
+
+            true_label = real_A_label.data.cpu().numpy()
+            true_label = [i for i in true_label]
+
+            eval_metrix = eval_semantic_segmentation(pre_label, true_label)
+            eval_acc += eval_metrix['mean_class_accuracy']
+            eval_miou += eval_metrix['miou']
+            eval_class_acc += eval_metrix['class_accuracy']
 
             loss_G_BA = criterion_NLL(fake_A, real_A_label)
             eval_loss_G_BA.append(loss_G_BA.item())
@@ -345,27 +382,31 @@ if __name__ == '__main__':
         D_mean = np.mean(D_loss)
         eval_mean_AB = np.mean(eval_loss_G_AB)
         eval_mean_BA = np.mean(eval_loss_G_BA)
+        eval_mean_miou = eval_miou/len(val_dataloader)
 
         print(
-            "Epoch[{:0>3}/{:0>3}]  loss_G:{:.6f} loss_D:{:.6f} loss_G_AB_valid:{:.9f} loss_G_BA_valid:{:.9f} train_G_AB_loss:{:.9f} train_G_BA_loss:{:.9f}".format(
-                epoch, Epoch, G_mean, D_mean, eval_mean_AB, eval_mean_BA, train_mean_AB, train_mean_BA))
+            "Epoch[{:0>3}/{:0>3}]  loss_G:{:.6f} loss_D:{:.6f} loss_G_AB_valid:{:.9f} loss_G_BA_valid:{:.9f} train_G_AB_loss:{:.9f} train_G_BA_loss:{:.9f}  train_G_BA_Miou:{:.9f} valid_G_BA_Miou:{:.9f}".format(
+                epoch, Epoch, G_mean, D_mean, eval_mean_AB, eval_mean_BA, train_mean_AB, train_mean_BA, train_mean_miou, eval_mean_miou))
 
         # 绘图
         loss_rec["loss_G"].append(G_mean), loss_rec["loss_D"].append(D_mean),
         loss_rec["loss_G_AB_valid"].append(eval_mean_AB), loss_rec["loss_G_BA_valid"].append(eval_mean_BA), \
         loss_rec["loss_G_AB_train"].append(train_mean_AB), loss_rec["loss_G_BA_train"].append(train_mean_BA)
+        loss_rec["G_BA_Miou_valid"].append(eval_mean_miou), loss_rec["G_BA_Miou_train"].append(train_mean_miou)
 
         plt_x = np.arange(1, epoch + 2)
         image_save_plot.plot_line(plt_x, loss_rec["loss_G"], loss_rec["loss_D"], loss_rec["loss_G_AB_valid"],
                                   loss_rec["loss_G_AB_train"], loss_rec["loss_G_BA_valid"], loss_rec["loss_G_BA_train"],
+                                  loss_rec["G_BA_Miou_valid"], loss_rec["G_BA_Miou_train"],
                                   out_dir=log_dir)
         # plot_line(plt_x, loss_rec["loss_valid"], mode="xx_real loss", out_dir=log_dir)
         # ------------------------------------------temp-------------------------------------
         if epoch > 1:
             image_save_plot.plot_line(plt_x[1:], loss_rec["loss_G"][1:], loss_rec["loss_D"][1:],
-                                      loss_rec["loss_G_AB_valid"][1:],
+                                      loss_rec["loss_G_BA_valid"][1:],
                                       loss_rec["loss_G_AB_train"][1:], loss_rec["loss_G_BA_valid"][1:],
                                       loss_rec["loss_G_BA_train"][1:],
+                                      loss_rec["G_BA_Miou_valid"][1:], loss_rec["G_BA_Miou_train"][1:],
                                       out_dir=log_dir, mark='temp')
 
         # Update learning rates
@@ -373,12 +414,10 @@ if __name__ == '__main__':
         lr_scheduler_D_A.step()
         lr_scheduler_D_B.step()
 
-        if eval_mean_AB + eval_mean_BA < best_loss:
-            best_loss = eval_mean_AB + eval_mean_BA
+        if eval_mean_AB < best_loss or eval_mean_miou > best_miou:
+            best_loss = eval_mean_AB
+            best_miou = eval_mean_miou
             best_epoch = epoch
-            print("epoch: %i" % epoch)
-            print("n_epoch: %i" % opt.n_epochs)
-            print("best_loss: %f " % best_loss)
 
             torch.save(G_AB.state_dict(), '%s/G_AB_%d.pth' % (log_dir, epoch))
             torch.save(G_BA.state_dict(), '%s/G_BA_%d.pth' % (log_dir, epoch))

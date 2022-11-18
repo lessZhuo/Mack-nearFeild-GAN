@@ -89,7 +89,7 @@ class GeneratorResNet(nn.Module):
                   nn.Conv2d(16, output_channels, 2)]
 
         if fw:
-            model += nn.Tanh()
+            model += [nn.Tanh()]
 
         self.model = nn.Sequential(*model)
 

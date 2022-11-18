@@ -6,6 +6,9 @@ import numpy as np
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
 import glob
+import torch as t
+from torch.utils.data import DataLoader
+from torch.autograd import Variable
 
 
 class LoadDataset(Dataset):
@@ -18,8 +21,8 @@ class LoadDataset(Dataset):
         self.direction = direction
         self.part = part
         # 获取该文件夹所有符合模式匹配格式的文件，变成list返回
-        self.files_A = sorted(glob.glob(os.path.join(root, "%s/A" % mode) + "/*.*.*"))
-        self.files_B = sorted(glob.glob(os.path.join(root, "%s/B" % mode) + "/*.*.*"))
+        self.files_A = sorted(glob.glob(os.path.join(root, "%s/A" % mode) + "/*.*"))
+        self.files_B = sorted(glob.glob(os.path.join(root, "%s/B" % mode) + "/*.*"))
 
     def __getitem__(self, index):
         # 1.读取mask的数据
@@ -48,13 +51,38 @@ class LoadDataset(Dataset):
         # 2.3根据是否合并或者读取实部虚部进行返回数据
         if self.combine:
             nf = np.concatenate((nf_real, nf_imag), axis=0)
-            nf = self.transform(nf)
+            # nf = self.transform(nf)
+            nf = t.from_numpy(nf)
+
             return {"A": mask, "B": nf}
         else:
             if self.part == "real":
                 return {"A": mask, "B": self.transform(nf_real)}
+                # return {"A": mask, "B": t.from_numpy(nf_real)}
             else:
-                return {"A": mask, "B": self.transform(nf_imag)}
+                # return {"A": mask, "B": self.transform(nf_imag)}
+                return {"A": mask, "B": t.from_numpy(nf_imag)}
 
     def __len__(self):
         return max(len(self.files_A), len(self.files_B))
+
+
+if __name__ == '__main__':
+    # transformations
+    transforms_ = [
+        transforms.ToTensor(),
+        # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+        transforms.Normalize([1], [1]),
+    ]
+
+    device = t.device('cpu')
+    train = LoadDataset("../datasets/crop_256", transforms_=transforms_, combine=False, direction="x", part="imag")
+    train_data = DataLoader(train, batch_size=1, shuffle=True, num_workers=0)
+    for i, sample in enumerate(train_data):
+        # 载入数据
+        img_data = Variable(sample['A'].to(device))
+        mmm = Variable(sample['B'].to(device))
+
+        print(mmm)
+
+        break

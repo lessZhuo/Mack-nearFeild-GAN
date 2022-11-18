@@ -6,6 +6,7 @@ import torchvision.transforms as transforms
 from torch.utils.data import DataLoader
 from torch.autograd import Variable
 import torch as t
+import matplotlib.pyplot as plt
 
 
 class MaskNfDataset(Dataset):
@@ -80,7 +81,7 @@ class MaskNfDatasetV2(Dataset):
 
         # 1.读取mask的数据
         mask = np.load(self.files_A[index % len(self.files_A)])
-        mask_label = t.from_numpy(mask)
+        mask_label = t.from_numpy(mask).long()
 
         mask_zero = mask ^ 1
         mask_one = mask ^ 0
@@ -123,12 +124,19 @@ class MaskNfDatasetV2(Dataset):
 
 if __name__ == '__main__':
     device = t.device('cpu')
-    train = MaskNfDataset("../datasets", transforms_=transforms_, combine=True, direction="x")
+    train = MaskNfDatasetV2("../datasets/crop_256", transforms_=transforms_, combine=True, direction="x")
     train_data = DataLoader(train, batch_size=20, shuffle=True, num_workers=0)
     for i, sample in enumerate(train_data):
         # 载入数据
         img_data = Variable(sample['A'].to(device))
         mmm = Variable(sample['B'].to(device))
+        label = Variable(sample['C'].to(device).long())
 
-        print(img_data)
-        print(mmm)
+        img_data_ = img_data[0, :, :, :]
+        img_data_d = img_data_.max(dim=0)[1].data.squeeze().detach().numpy()
+        print(img_data_d.shape)
+        plt.subplot(1, 2, 1)
+        plt.imshow(img_data_d, cmap='gray')
+        plt.show()
+        plt.close()
+        break

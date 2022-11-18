@@ -59,6 +59,7 @@ parser.add_argument('--pool_size', type=int, default=50,
 parser.add_argument("--img_height", type=int, default=256, help="size of image height")  # 128
 parser.add_argument("--img_width", type=int, default=256, help="size of image width")  # 128
 parser.add_argument('--gan_mode', type=str, default='lsgan', help='the type of GAN objective. [vanilla| lsgan | wgangp]. vanilla GAN loss is the cross-entropy objective used in the original GAN paper.')
+parser.add_argument("--sample_interval", type=int, default=250, help="interval between saving generator outputs")
 opt = parser.parse_args()
 print(opt)
 
@@ -241,7 +242,7 @@ if __name__ == '__main__':
 
             loss_GAN = (loss_G_A + loss_G_B) / 2
             loss_cycle = (loss_cycle_B + loss_cycle_A) / 2
-            loss_G = loss_GAN + opt.lambda_cyc * loss_cycle
+            loss_G = loss_GAN + opt.lambda_cycle * loss_cycle
             G_loss.append(loss_G.item())
 
             loss_G.backward()
@@ -288,7 +289,7 @@ if __name__ == '__main__':
             optimizer_D_B.step()
 
             # Total loss
-            loss_D = loss_D_B * opt.proportion + loss_D_A * (1 - opt.proportion)
+            loss_D = ( loss_D_B + loss_D_A ) / 2
             D_loss.append(loss_D.item())
 
             # --------------
@@ -352,8 +353,12 @@ if __name__ == '__main__':
             real_A = Variable(sample['A'].to(device))
             real_B = Variable(sample['B'].to(device))
 
-            fake_B = net_G_AB_v(real_A)
-            fake_A = net_G_BA_v(real_B)
+            fake_B, _, _, _, _, _, _, _, _, _, _, \
+            _, _, _, _, _, _, _, _, _, _, \
+            _, _, _, _, _, _, _, _, _  = net_G_AB_v(real_A)
+            fake_A, _, _, _, _, _, _, _, _, _, _, \
+            _, _, _, _, _, _, _, _, _, _, \
+            _, _, _, _, _, _, _, _, _  = net_G_BA_v(real_B)
 
             loss_G_AB = criterion_Vail(fake_B, real_B)
             eval_loss_G_AB.append(loss_G_AB.item())
