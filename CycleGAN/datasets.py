@@ -68,8 +68,7 @@ transforms_ = [
 
 
 class MaskNfDatasetV2(Dataset):
-    def __init__(self, root, transforms_=None, mode="train", combine=False, direction="x", part="real"):
-        self.transform = transforms.Compose(transforms_)
+    def __init__(self, root, mode="train", combine=False, direction="x", part="real"):
         self.combine = combine
         self.direction = direction
         self.part = part
@@ -104,19 +103,19 @@ class MaskNfDatasetV2(Dataset):
         # 2.2进行类型转换和维度扩充
         nf_real = nf_real.astype(np.float32)
         nf_imag = nf_imag.astype(np.float32)
-        nf_real = nf_real[:, :, np.newaxis]
-        nf_imag = nf_imag[:, :, np.newaxis]
+        nf_real = nf_real[np.newaxis, :, :]
+        nf_imag = nf_imag[np.newaxis, :, :]
 
         # 2.3根据是否合并或者读取实部虚部进行返回数据
         if self.combine:
             nf = np.concatenate((nf_real, nf_imag), axis=2)
-            nf = self.transform(nf).float()
+            nf = t.from_numpy(nf).float()
             return {"A": mask, "B": nf, "C": mask_label}
         else:
             if self.part == "real":
-                return {"A": mask, "B": self.transform(nf_real).float(), "C": mask_label}
+                return {"A": mask, "B": t.from_numpy(nf_real).float(), "C": mask_label}
             else:
-                return {"A": mask, "B": self.transform(nf_imag).float(), "C": mask_label}
+                return {"A": mask, "B": t.from_numpy(nf_imag).float(), "C": mask_label}
 
     def __len__(self):
         return max(len(self.files_A), len(self.files_B))
@@ -124,7 +123,7 @@ class MaskNfDatasetV2(Dataset):
 
 if __name__ == '__main__':
     device = t.device('cpu')
-    train = MaskNfDatasetV2("../datasets/crop_256", transforms_=transforms_, combine=True, direction="x")
+    train = MaskNfDatasetV2("../datasets/crop_256", combine=True, direction="x")
     train_data = DataLoader(train, batch_size=20, shuffle=True, num_workers=0)
     for i, sample in enumerate(train_data):
         # 载入数据
@@ -136,7 +135,7 @@ if __name__ == '__main__':
         img_data_d = img_data_.max(dim=0)[1].data.squeeze().detach().numpy()
         print(img_data_d.shape)
         plt.subplot(1, 2, 1)
-        plt.imshow(img_data_d, cmap='gray')
+        plt.imshow(img_data_d)
         plt.show()
         plt.close()
         break

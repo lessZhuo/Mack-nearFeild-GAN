@@ -295,7 +295,7 @@ class ImagePlotSaveV2:
         plt.savefig('%s/%i_%i.png' % (log_dir, epoch, batches_done), bbox_inches='tight')
         plt.close()
 
-    def plot_line(selft, epoch, loss_G, loss_D, valid_G_AB, train_G_AB, valid_G_BA, train_G_BA, valid_miou, train_miou, out_dir, mark='all'):
+    def plot_line(selft, epoch, loss_G, loss_D, valid_G_AB, train_G_AB, valid_G_BA, train_G_BA, valid_miou, train_miou, valid_acc, train_acc, valid_class_acc, train_class_acc, out_dir, mark='all'):
         """
         绘制训练和验证集的loss曲线
         """
@@ -336,12 +336,16 @@ class ImagePlotSaveV2:
         plt.subplot(224)
 
         plt.xlabel('Epoch', fontsize=30)
-        plt.plot(epoch, valid_miou, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=15)
-        plt.plot(epoch, train_miou, label='Train', color='r', marker='o', markerfacecolor='r', markersize=15)
+        plt.plot(epoch, valid_miou, label='Valid_miou', color='b', marker='o', markerfacecolor='b', markersize=15)
+        plt.plot(epoch, train_miou, label='Train_miou', color='r', marker='o', markerfacecolor='r', markersize=15)
+        plt.plot(epoch, valid_acc, label='Valid_acc', color='y', marker='o', markerfacecolor='y', markersize=15)
+        plt.plot(epoch, train_acc, label='Train_acc', color='g', marker='o', markerfacecolor='g', markersize=15)
+        plt.plot(epoch, valid_class_acc, label='Valid_class_acc', color='c', marker='o', markerfacecolor='c', markersize=15)
+        plt.plot(epoch, train_class_acc, label='Train_class_acc', color='m', marker='o', markerfacecolor='m', markersize=15)
         plt.tick_params(labelsize=30)
         # location = 'upper right' if mode == 'loss' else 'upper left'
         plt.legend(loc='best', prop={'size': 30})
-        plt.title('miou', fontsize=30)
+        plt.title('G_BA效果', fontsize=30)
         plt.subplots_adjust(wspace=0.4, hspace=0.4)
 
         plt.savefig(os.path.join(out_dir, mark + r'loss.png'))

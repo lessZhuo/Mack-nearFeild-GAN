@@ -160,7 +160,8 @@ proportion = opt.proportion
 if __name__ == '__main__':
     print(device)
     loss_rec = {"loss_D": [], "loss_G": [], "loss_G_AB_valid": [], "loss_G_AB_train": [], "loss_G_BA_valid": [],
-                "loss_G_BA_train": [], "G_BA_Miou_train": [], "G_BA_Miou_valid": []}
+                "loss_G_BA_train": [], "G_BA_Miou_train": [], "G_BA_Miou_valid": [], "G_BA_acc_valid": [], "G_BA_acc_train": [], "G_BA_class_acc_valid": [], "G_BA_class_acc_train": []}
+
     now_time = datetime.datetime.now()
     time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
     log_dir = os.path.join("../results/", "cycleGan", time_str)
@@ -173,7 +174,6 @@ if __name__ == '__main__':
     best_loss = 0.01
     best_miou = 0
 
-
     for epoch in range(opt.epoch, opt.n_epochs):
         D_loss = []
         G_loss = []
@@ -183,6 +183,7 @@ if __name__ == '__main__':
         train_miou = 0
         train_class_acc = 0
         torch.cuda.empty_cache()
+
         for i, batch in enumerate(dataloader):
             # 清除缓存
             torch.cuda.empty_cache()
@@ -221,7 +222,6 @@ if __name__ == '__main__':
 
             # Cycle loss
             recov_A = G_BA(fake_B)
-
             loss_cycle_A = criterion_NLL(recov_A, real_A_label)
             recov_B = G_AB(fake_A)
             loss_cycle_B = criterion_cycle(recov_B, real_B)
@@ -283,7 +283,7 @@ if __name__ == '__main__':
 
             # Print log
             sys.stdout.write(
-                "\r[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f, adv: %f, cycle: %f] ETA: %s"
+                "\r[Epoch %d/%d] [Batch %d/%d] [D loss: %f] [G loss: %f, adv: %f, cycle: %f,nll_loss: %f] ETA: %s"
                 % (
                     epoch,
                     opt.n_epochs,
@@ -293,14 +293,10 @@ if __name__ == '__main__':
                     loss_G.item(),
                     loss_GAN.item(),
                     loss_cycle.item(),
-                    # loss_identity.item(),
+                    loss_cycle_A .item(),
                     time_left,
                 )
             )
-
-            # # If at sample interval save image
-            # if batches_done % opt.sample_interval == 0:
-            #     sample_images(batches_done)
 
             # --------------
             #  vail train Progress
@@ -329,16 +325,19 @@ if __name__ == '__main__':
             train_miou += eval_metrix['miou']
             train_class_acc += eval_metrix['class_accuracy']
 
-            train_mean_AB = np.mean(train_loss_AB)
-            train_mean_BA = np.mean(train_loss_BA)
-            train_mean_miou = train_miou / len(dataloader)
-
             # If at sample interval save image
             if batches_done % opt.sample_interval == 0:
                 image_save_plot.sample_images_v2(epoch, batches_done, log_dir, real_A=real_A, real_B=real_B, fake_A=fake_A,
                                               fake_B=fake_B)
-        print("Epoch[{:0>3}/{:0>3}]  train_AB_loss:{:.6f}  trainBA_loss:{:.6f} Miou :{:.6f}: ".format(epoch, Epoch, train_mean_AB,
-                                                                                        train_mean_BA, train_mean_miou))
+
+        train_mean_AB = np.mean(train_loss_AB)
+        train_mean_BA = np.mean(train_loss_BA)
+        train_mean_miou = train_miou / len(dataloader)
+        train_mean_acc = train_acc / len(dataloader)
+        train_mean_class_acc = train_class_acc / len(dataloader)
+
+        print("Epoch[{:0>3}/{:0>3}]  train_AB_loss:{:.6f}  train_BA_loss:{:.6f} Miou :{:.6f} Train_acc : {:.6f} Train_class_acc : {:.6f} ".format(epoch, Epoch, train_mean_AB,
+                                                                                        train_mean_BA, train_mean_miou, train_mean_acc, train_mean_class_acc))
 
         # --------------
         #  vail Progress
@@ -383,30 +382,41 @@ if __name__ == '__main__':
         eval_mean_AB = np.mean(eval_loss_G_AB)
         eval_mean_BA = np.mean(eval_loss_G_BA)
         eval_mean_miou = eval_miou/len(val_dataloader)
+        eval_mean_acc = eval_acc / len(val_dataloader)
+        eval_mean_class_acc = eval_class_acc / len(val_dataloader)
 
         print(
-            "Epoch[{:0>3}/{:0>3}]  loss_G:{:.6f} loss_D:{:.6f} loss_G_AB_valid:{:.9f} loss_G_BA_valid:{:.9f} train_G_AB_loss:{:.9f} train_G_BA_loss:{:.9f}  train_G_BA_Miou:{:.9f} valid_G_BA_Miou:{:.9f}".format(
-                epoch, Epoch, G_mean, D_mean, eval_mean_AB, eval_mean_BA, train_mean_AB, train_mean_BA, train_mean_miou, eval_mean_miou))
+            "Epoch[{:0>3}/{:0>3}]  loss_G:{:.6f} loss_D:{:.6f} loss_G_AB_valid:{:.9f} loss_G_BA_valid:{:.9f} train_G_AB_loss:{:.9f} train_G_BA_loss:{:.9f}".format(
+                epoch, Epoch, G_mean, D_mean, eval_mean_AB, eval_mean_BA, train_mean_AB, train_mean_BA))
+        print(
+            "train_Miou:{:.9f} valid_Miou:{:.9f} train_acc:{:.9f} valid_acc:{:.9f} train_class_acc:{:.9f} valid_class_acc:{:.9f}".format(
+                train_mean_miou, eval_mean_miou, train_mean_acc, eval_mean_acc, train_mean_class_acc, eval_mean_class_acc))
 
         # 绘图
         loss_rec["loss_G"].append(G_mean), loss_rec["loss_D"].append(D_mean),
         loss_rec["loss_G_AB_valid"].append(eval_mean_AB), loss_rec["loss_G_BA_valid"].append(eval_mean_BA), \
         loss_rec["loss_G_AB_train"].append(train_mean_AB), loss_rec["loss_G_BA_train"].append(train_mean_BA)
         loss_rec["G_BA_Miou_valid"].append(eval_mean_miou), loss_rec["G_BA_Miou_train"].append(train_mean_miou)
+        loss_rec["G_BA_acc_valid"].append(eval_mean_acc), loss_rec["G_BA_acc_train"].append(train_mean_acc)
+        loss_rec["G_BA_class_acc_valid"].append(eval_mean_class_acc), loss_rec["G_BA_class_acc_train"].append(train_mean_class_acc)
 
         plt_x = np.arange(1, epoch + 2)
         image_save_plot.plot_line(plt_x, loss_rec["loss_G"], loss_rec["loss_D"], loss_rec["loss_G_AB_valid"],
                                   loss_rec["loss_G_AB_train"], loss_rec["loss_G_BA_valid"], loss_rec["loss_G_BA_train"],
                                   loss_rec["G_BA_Miou_valid"], loss_rec["G_BA_Miou_train"],
+                                  loss_rec["G_BA_acc_valid"], loss_rec["G_BA_acc_train"],
+                                  loss_rec["G_BA_class_acc_valid"], loss_rec["G_BA_class_acc_train"],
                                   out_dir=log_dir)
         # plot_line(plt_x, loss_rec["loss_valid"], mode="xx_real loss", out_dir=log_dir)
         # ------------------------------------------temp-------------------------------------
-        if epoch > 1:
-            image_save_plot.plot_line(plt_x[1:], loss_rec["loss_G"][1:], loss_rec["loss_D"][1:],
-                                      loss_rec["loss_G_BA_valid"][1:],
-                                      loss_rec["loss_G_AB_train"][1:], loss_rec["loss_G_BA_valid"][1:],
-                                      loss_rec["loss_G_BA_train"][1:],
-                                      loss_rec["G_BA_Miou_valid"][1:], loss_rec["G_BA_Miou_train"][1:],
+        if epoch > 5:
+            image_save_plot.plot_line(plt_x[5:], loss_rec["loss_G"][5:], loss_rec["loss_D"][5:],
+                                      loss_rec["loss_G_BA_valid"][5:],
+                                      loss_rec["loss_G_AB_train"][5:], loss_rec["loss_G_BA_valid"][5:],
+                                      loss_rec["loss_G_BA_train"][5:],
+                                      loss_rec["G_BA_Miou_valid"][5:], loss_rec["G_BA_Miou_train"][5:],
+                                      loss_rec["G_BA_acc_valid"][5:], loss_rec["G_BA_acc_train"][5:],
+                                      loss_rec["G_BA_class_acc_valid"][5:], loss_rec["G_BA_class_acc_train"][5:],
                                       out_dir=log_dir, mark='temp')
 
         # Update learning rates
@@ -414,9 +424,9 @@ if __name__ == '__main__':
         lr_scheduler_D_A.step()
         lr_scheduler_D_B.step()
 
-        if eval_mean_AB < best_loss or eval_mean_miou > best_miou:
-            best_loss = eval_mean_AB
-            best_miou = eval_mean_miou
+        if eval_mean_AB < max(best_loss, 0.01) or eval_mean_miou > min(best_miou, 0.8):
+            best_loss = min(eval_mean_AB, best_loss)
+            best_miou = max(eval_mean_miou, best_miou)
             best_epoch = epoch
 
             torch.save(G_AB.state_dict(), '%s/G_AB_%d.pth' % (log_dir, epoch))
