@@ -108,8 +108,9 @@ class MaskNfDatasetV2(Dataset):
 
         # 2.3根据是否合并或者读取实部虚部进行返回数据
         if self.combine:
-            nf = np.concatenate((nf_real, nf_imag), axis=2)
+            nf = np.concatenate((nf_real, nf_imag), axis=0)
             nf = t.from_numpy(nf).float()
+
             return {"A": mask, "B": nf, "C": mask_label}
         else:
             if self.part == "real":

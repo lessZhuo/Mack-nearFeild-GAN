@@ -22,7 +22,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1,0"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
-parser.add_argument("--n_epochs", type=int, default=50, help="number of epochs of training")
+parser.add_argument("--n_epochs", type=int, default=100, help="number of epochs of training")
 parser.add_argument("--dataset_name", type=str, default="monet2photo", help="name of the dataset")
 parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.00005, help="adam: learning rate")
@@ -131,15 +131,15 @@ transforms_ = [
 
 # Training data loader
 dataloader = DataLoader(
-    MaskNfDatasetV2("../datasets/crop_256", transforms_=transforms_, combine=True, direction="x"),
+    MaskNfDatasetV2("../datasets/crop_256/new", combine=True, direction="x"),
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
 # Test data loader
 val_dataloader = DataLoader(
-    MaskNfDatasetV2("../datasets/crop_256", transforms_=transforms_, mode="test", combine=True,
-                  direction="x"),
+    MaskNfDatasetV2("../datasets/crop_256/new", mode="test", combine=True,
+                    direction="x"),
     batch_size=1,
     shuffle=True,
     num_workers=1,
@@ -160,7 +160,8 @@ proportion = opt.proportion
 if __name__ == '__main__':
     print(device)
     loss_rec = {"loss_D": [], "loss_G": [], "loss_G_AB_valid": [], "loss_G_AB_train": [], "loss_G_BA_valid": [],
-                "loss_G_BA_train": [], "G_BA_Miou_train": [], "G_BA_Miou_valid": [], "G_BA_acc_valid": [], "G_BA_acc_train": [], "G_BA_class_acc_valid": [], "G_BA_class_acc_train": []}
+                "loss_G_BA_train": [], "G_BA_Miou_train": [], "G_BA_Miou_valid": [], "G_BA_acc_valid": [],
+                "G_BA_acc_train": [], "G_BA_class_acc_valid": [], "G_BA_class_acc_train": []}
 
     now_time = datetime.datetime.now()
     time_str = datetime.datetime.strftime(now_time, '%m-%d_%H-%M')
@@ -293,7 +294,7 @@ if __name__ == '__main__':
                     loss_G.item(),
                     loss_GAN.item(),
                     loss_cycle.item(),
-                    loss_cycle_A .item(),
+                    loss_cycle_A.item(),
                     time_left,
                 )
             )
@@ -327,8 +328,9 @@ if __name__ == '__main__':
 
             # If at sample interval save image
             if batches_done % opt.sample_interval == 0:
-                image_save_plot.sample_images_v2(epoch, batches_done, log_dir, real_A=real_A, real_B=real_B, fake_A=fake_A,
-                                              fake_B=fake_B)
+                image_save_plot.sample_images_v2(epoch, batches_done, log_dir, real_A=real_A, real_B=real_B,
+                                                 fake_A=fake_A,
+                                                 fake_B=fake_B)
 
         train_mean_AB = np.mean(train_loss_AB)
         train_mean_BA = np.mean(train_loss_BA)
@@ -336,8 +338,9 @@ if __name__ == '__main__':
         train_mean_acc = train_acc / len(dataloader)
         train_mean_class_acc = train_class_acc / len(dataloader)
 
-        print("Epoch[{:0>3}/{:0>3}]  train_AB_loss:{:.6f}  train_BA_loss:{:.6f} Miou :{:.6f} Train_acc : {:.6f} Train_class_acc : {:.6f} ".format(epoch, Epoch, train_mean_AB,
-                                                                                        train_mean_BA, train_mean_miou, train_mean_acc, train_mean_class_acc))
+        print(
+            "Epoch[{:0>3}/{:0>3}]  train_AB_loss:{:.6f}  train_BA_loss:{:.6f}  Miou :{:.6f}  Train_acc:{:.6f}  Train_class_acc:{:}  ".format(
+                epoch, Epoch, train_mean_AB, train_mean_BA, train_mean_miou, train_mean_acc, train_mean_class_acc))
 
         # --------------
         #  vail Progress
@@ -381,7 +384,7 @@ if __name__ == '__main__':
         D_mean = np.mean(D_loss)
         eval_mean_AB = np.mean(eval_loss_G_AB)
         eval_mean_BA = np.mean(eval_loss_G_BA)
-        eval_mean_miou = eval_miou/len(val_dataloader)
+        eval_mean_miou = eval_miou / len(val_dataloader)
         eval_mean_acc = eval_acc / len(val_dataloader)
         eval_mean_class_acc = eval_class_acc / len(val_dataloader)
 
@@ -389,8 +392,9 @@ if __name__ == '__main__':
             "Epoch[{:0>3}/{:0>3}]  loss_G:{:.6f} loss_D:{:.6f} loss_G_AB_valid:{:.9f} loss_G_BA_valid:{:.9f} train_G_AB_loss:{:.9f} train_G_BA_loss:{:.9f}".format(
                 epoch, Epoch, G_mean, D_mean, eval_mean_AB, eval_mean_BA, train_mean_AB, train_mean_BA))
         print(
-            "train_Miou:{:.9f} valid_Miou:{:.9f} train_acc:{:.9f} valid_acc:{:.9f} train_class_acc:{:.9f} valid_class_acc:{:.9f}".format(
-                train_mean_miou, eval_mean_miou, train_mean_acc, eval_mean_acc, train_mean_class_acc, eval_mean_class_acc))
+            "train_Miou:{:.9f} valid_Miou:{:.9f} train_acc:{:.9f} valid_acc:{:.9f} train_class_acc:{:} valid_class_acc:{:}".format(
+                train_mean_miou, eval_mean_miou, train_mean_acc, eval_mean_acc, train_mean_class_acc,
+                eval_mean_class_acc))
 
         # 绘图
         loss_rec["loss_G"].append(G_mean), loss_rec["loss_D"].append(D_mean),
@@ -398,7 +402,8 @@ if __name__ == '__main__':
         loss_rec["loss_G_AB_train"].append(train_mean_AB), loss_rec["loss_G_BA_train"].append(train_mean_BA)
         loss_rec["G_BA_Miou_valid"].append(eval_mean_miou), loss_rec["G_BA_Miou_train"].append(train_mean_miou)
         loss_rec["G_BA_acc_valid"].append(eval_mean_acc), loss_rec["G_BA_acc_train"].append(train_mean_acc)
-        loss_rec["G_BA_class_acc_valid"].append(eval_mean_class_acc), loss_rec["G_BA_class_acc_train"].append(train_mean_class_acc)
+        loss_rec["G_BA_class_acc_valid"].append(eval_mean_class_acc), loss_rec["G_BA_class_acc_train"].append(
+            train_mean_class_acc)
 
         plt_x = np.arange(1, epoch + 2)
         image_save_plot.plot_line(plt_x, loss_rec["loss_G"], loss_rec["loss_D"], loss_rec["loss_G_AB_valid"],
