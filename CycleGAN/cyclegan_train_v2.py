@@ -124,21 +124,25 @@ image_save_plot = ImagePlotSaveV2(output_shape, input_shape)
 
 # transformations
 transforms_ = [
-    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.0184, 0.0184], std=[0.0906, 0.1348])
+]
+
+de_transforms_ = [
+    # transforms.ToTensor(),
     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    transforms.Normalize([1], [1])
+    transforms.Normalize(mean=[-0.2031, -0.1365], std=[11.0375, 7.4184]),
 ]
 
 # Training data loader
 dataloader = DataLoader(
-    MaskNfDatasetV2("../datasets/crop_256/new", combine=True, direction="x"),
+    MaskNfDatasetV2("../datasets/crop_256/new", transforms_=transforms_, combine=True, direction="x"),
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
 # Test data loader
 val_dataloader = DataLoader(
-    MaskNfDatasetV2("../datasets/crop_256/new", mode="test", combine=True,
+    MaskNfDatasetV2("../datasets/crop_256/new", transforms_=transforms_, mode="test", combine=True,
                     direction="x"),
     batch_size=1,
     shuffle=True,
@@ -330,7 +334,7 @@ if __name__ == '__main__':
             if batches_done % opt.sample_interval == 0:
                 image_save_plot.sample_images_v2(epoch, batches_done, log_dir, real_A=real_A, real_B=real_B,
                                                  fake_A=fake_A,
-                                                 fake_B=fake_B)
+                                                 fake_B=fake_B,de_transforms_=de_transforms_)
 
         train_mean_AB = np.mean(train_loss_AB)
         train_mean_BA = np.mean(train_loss_BA)

@@ -8,6 +8,7 @@ import torch
 import numpy as np
 import matplotlib.pyplot as plt
 from torchvision.utils import save_image, make_grid
+import torchvision.transforms as transforms
 
 
 class ReplayBuffer:
@@ -394,11 +395,12 @@ class ImagePlotSaveV2:
         plt.savefig(os.path.join(out_dir, r'test_result.png'))
         plt.close()
 
-    def sample_images_v2(self, epoch, batches_done, log_dir, real_A, fake_A, real_B, fake_B):
+    def sample_images_v2(self, epoch, batches_done, log_dir, real_A, fake_A, real_B, fake_B,de_transforms_=None):
         """Saves a generated sample from the test set"""
+        tf = transforms.Compose(de_transforms_)
 
-        real_B_r = real_B[0, 0, :, :]
-        real_B_i = real_B[0, 1, :, :]
+        real_B_r = tf(real_B)[0, 0, :, :]
+        real_B_i = tf(real_B)[0, 1, :, :]
         fake_B_r = fake_B[0, 0, :, :]
         fake_B_i = fake_B[0, 1, :, :]
         real_A = real_A[0, :, :, :].max(dim=0)[1].data

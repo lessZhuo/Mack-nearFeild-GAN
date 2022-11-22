@@ -61,17 +61,24 @@ class MaskNfDataset(Dataset):
 
 # transformations
 transforms_ = [
-    transforms.ToTensor(),
+    # transforms.ToTensor(),
     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    transforms.Normalize([1], [1]),
+    transforms.Normalize(mean=[0.0184, 0.0184], std=[0.0906, 0.1348]),
+]
+
+de_transforms_ = [
+    # transforms.ToTensor(),
+    # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+    transforms.Normalize(mean=[-0.2031, -0.1365], std=[11.0375, 7.4184]),
 ]
 
 
 class MaskNfDatasetV2(Dataset):
-    def __init__(self, root, mode="train", combine=False, direction="x", part="real"):
+    def __init__(self, root, transforms_=None, mode="train", combine=False, direction="x", part="real"):
         self.combine = combine
         self.direction = direction
         self.part = part
+        self.transform = transforms.Compose(transforms_)
         # 获取该文件夹所有符合模式匹配格式的文件，变成list返回
         self.files_A = sorted(glob.glob(os.path.join(root, "%s/A" % mode) + "/*.*"))
         self.files_B = sorted(glob.glob(os.path.join(root, "%s/B" % mode) + "/*.*"))
@@ -86,7 +93,7 @@ class MaskNfDatasetV2(Dataset):
         mask_one = mask ^ 0
 
         mask = np.array([mask_zero, mask_one])
-        mask = mask.astype(np.float)
+        mask = mask.astype(float)
         mask = t.from_numpy(mask)
 
         # 2.读取近场数据
@@ -110,13 +117,13 @@ class MaskNfDatasetV2(Dataset):
         if self.combine:
             nf = np.concatenate((nf_real, nf_imag), axis=0)
             nf = t.from_numpy(nf).float()
-
+            nf = self.transform(nf)
             return {"A": mask, "B": nf, "C": mask_label}
         else:
             if self.part == "real":
-                return {"A": mask, "B": t.from_numpy(nf_real).float(), "C": mask_label}
+                return {"A": mask, "B": self.transform(t.from_numpy(nf_real).float()), "C": mask_label}
             else:
-                return {"A": mask, "B": t.from_numpy(nf_imag).float(), "C": mask_label}
+                return {"A": mask, "B": self.transform(t.from_numpy(nf_imag).float()), "C": mask_label}
 
     def __len__(self):
         return max(len(self.files_A), len(self.files_B))
@@ -124,19 +131,18 @@ class MaskNfDatasetV2(Dataset):
 
 if __name__ == '__main__':
     device = t.device('cpu')
-    train = MaskNfDatasetV2("../datasets/crop_256", combine=True, direction="x")
-    train_data = DataLoader(train, batch_size=20, shuffle=True, num_workers=0)
+    train = MaskNfDatasetV2("../datasets/crop_256/new", transforms_= transforms_,combine=True, direction="x")
+    train_data = DataLoader(train, batch_size=500, shuffle=True, num_workers=0)
+
+    tf = transforms.Compose(de_transforms_)
     for i, sample in enumerate(train_data):
         # 载入数据
         img_data = Variable(sample['A'].to(device))
         mmm = Variable(sample['B'].to(device))
         label = Variable(sample['C'].to(device).long())
 
-        img_data_ = img_data[0, :, :, :]
-        img_data_d = img_data_.max(dim=0)[1].data.squeeze().detach().numpy()
-        print(img_data_d.shape)
-        plt.subplot(1, 2, 1)
-        plt.imshow(img_data_d)
-        plt.show()
-        plt.close()
+        print(mmm)
+        mm = tf(mmm)
+
+        print(mm)
         break
