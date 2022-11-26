@@ -72,32 +72,32 @@ class ImagePlotSave:
         x1 = plt.subplot(2, 3, 1)
         plt.imshow(real_A)
         plt.colorbar(fraction=0.05, pad=0.05)
-        plt.clim(-1, 0)
+        # plt.clim(-1, 0)
         x1.set_title('Mask')
         x2 = plt.subplot(2, 3, 2)
         plt.imshow(fake_B_r)
         plt.colorbar(fraction=0.05, pad=0.05)
-        plt.clim(-1, 1)
+        # plt.clim(-1, 1)
         x2.set_title('Generated real part of NF')
         x3 = plt.subplot(2, 3, 3)
         plt.imshow(fake_B_i)
         plt.colorbar(fraction=0.05, pad=0.05)
-        plt.clim(-1.001, -0.95)
+        # plt.clim(-1.001, -0.95)
         x3.set_title('Generated imaginary part of NF')
         x4 = plt.subplot(2, 3, 4)
         plt.imshow(fake_A)
         plt.colorbar(fraction=0.05, pad=0.05)
-        plt.clim(-1, 0)
+        # plt.clim(-1, 0)
         x4.set_title('Generated_Mask')
         x5 = plt.subplot(2, 3, 5)
         plt.imshow(real_B_r)
         plt.colorbar(fraction=0.05, pad=0.05)
-        plt.clim(-1, 1)
+        # plt.clim(-1, 1)
         x5.set_title('real part of NF')
         x6 = plt.subplot(2, 3, 6)
         plt.imshow(real_B_i)
         plt.colorbar(fraction=0.05, pad=0.05)
-        plt.clim(-1.001, -0.95)
+        # plt.clim(-1.001, -0.95)
         x6.set_title('imaginary part of NF')
 
         plt.subplots_adjust(wspace=0.4, hspace=0.05)
@@ -401,8 +401,8 @@ class ImagePlotSaveV2:
 
         real_B_r = tf(real_B)[0, 0, :, :]
         real_B_i = tf(real_B)[0, 1, :, :]
-        fake_B_r = fake_B[0, 0, :, :]
-        fake_B_i = fake_B[0, 1, :, :]
+        fake_B_r = tf(fake_B)[0, 0, :, :]
+        fake_B_i = tf(fake_B)[0, 1, :, :]
         real_A = real_A[0, :, :, :].max(dim=0)[1].data
         fake_A = fake_A[0, :, :, :].max(dim=0)[1].data
 

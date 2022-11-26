@@ -20,7 +20,7 @@ import torch
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
-parser.add_argument("--n_epochs", type=int, default=50, help="number of epochs of training")
+parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
 parser.add_argument("--dataset_name", type=str, default="monet2photo", help="name of the dataset")
 parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.00005, help="adam: learning rate")
@@ -127,14 +127,14 @@ transforms_ = [
 
 # Training data loader
 dataloader = DataLoader(
-    MaskNfDataset("../datasets/crop_256", transforms_=transforms_, combine=True, direction="x"),
+    MaskNfDataset("../datasets/crop_256/new", transforms_=transforms_, combine=True, direction="x"),
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
 # Test data loader
 val_dataloader = DataLoader(
-    MaskNfDataset("../datasets/crop_256", transforms_=transforms_, mode="test", combine=True,
+    MaskNfDataset("../datasets/crop_256/new", transforms_=transforms_, mode="test", combine=True,
                   direction="x"),
     batch_size=1,
     shuffle=True,
@@ -166,7 +166,7 @@ if __name__ == '__main__':
     prev_time = time.time()
     # i, batch = next(enumerate(dataloader))
     best_acc, best_epoch = 0, 0
-    best_loss = 0.01
+    best_loss = 0.1
     for epoch in range(opt.epoch, opt.n_epochs):
         D_loss = []
         G_loss = []
