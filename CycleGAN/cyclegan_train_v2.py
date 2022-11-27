@@ -124,7 +124,7 @@ image_save_plot = ImagePlotSaveV2(output_shape, input_shape)
 
 # transformations
 transforms_ = [
-    transforms.Normalize(mean=[0.5, 0.5], std=[0.5, 0.5])
+    transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
 ]
 
 de_transforms_ = [

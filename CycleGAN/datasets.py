@@ -63,7 +63,7 @@ class MaskNfDataset(Dataset):
 transforms_ = [
     # transforms.ToTensor(),
     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    transforms.Normalize(mean=[0.0184, 0.0184], std=[0.0906, 0.1348]),
+    transforms.Normalize(mean=[0.0201, 0.0210], std=[0.0083, 0.0184]),
 ]
 
 de_transforms_ = [
@@ -116,9 +116,9 @@ class MaskNfDatasetV2(Dataset):
         # 2.3根据是否合并或者读取实部虚部进行返回数据
         if self.combine:
             nf = np.concatenate((nf_real, nf_imag), axis=0)
-            nf = t.from_numpy(nf).float()
-            nf = self.transform(nf)
-            return {"A": mask, "B": nf, "C": mask_label}
+            nff = t.from_numpy(nf).float()
+            nf = self.transform(nff)
+            return {"A": mask, "B": nf, "C": mask_label, "D": nff }
         else:
             if self.part == "real":
                 return {"A": mask, "B": self.transform(t.from_numpy(nf_real).float()), "C": mask_label}
@@ -131,18 +131,38 @@ class MaskNfDatasetV2(Dataset):
 
 if __name__ == '__main__':
     device = t.device('cpu')
-    train = MaskNfDatasetV2("../datasets/crop_256/new", transforms_= transforms_,combine=True, direction="x")
-    train_data = DataLoader(train, batch_size=500, shuffle=True, num_workers=0)
+    train = MaskNfDatasetV2("../datasets/crop_256/new", transforms_=transforms_, combine=True, direction="x")
+    train_data = DataLoader(train, batch_size=2, shuffle=True, num_workers=0)
 
     tf = transforms.Compose(de_transforms_)
+    # 计算原图的 mean 和std
+    nb_samples = 0
+    # 创建3维的空列表
+    channel_mean = t.zeros(2)
+    channel_std = t.zeros(2)
+
     for i, sample in enumerate(train_data):
         # 载入数据
         img_data = Variable(sample['A'].to(device))
-        mmm = Variable(sample['B'].to(device))
+        mmm = Variable(sample['D'].to(device))
         label = Variable(sample['C'].to(device).long())
+        # print(mmm)
+        # mm = tf(mmm)
 
-        print(mmm)
-        mm = tf(mmm)
+        # print(mmm.shape)
+        N, C, H, W = mmm.shape[:4]
+        # 将w,h维度的数据展平，为batch，channel,data,然后对三个维度上的数分别求和和标准差
+        image = mmm.view(N, C, -1)
+        # print(image.shape)
+        # 展平后，w,h属于第二维度，对他们求平均，sum(0)为将同一纬度的数据累加
+        channel_mean += image.mean(2).sum(0)
+        # 展平后，w,h属于第二维度，对他们求标准差，sum(0)为将同一纬度的数据累加
+        channel_std += image.std(2).sum(0)
+        # 获取所有batch的数据，这里为1
+        nb_samples += N
+        # 获取同一batch的均值和标准差
 
-        print(mm)
-        break
+    channel_mean /= nb_samples
+    channel_std /= nb_samples
+    print(channel_mean, channel_std)
+
