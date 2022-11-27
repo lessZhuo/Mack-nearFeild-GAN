@@ -23,9 +23,11 @@ class MaskNfDataset(Dataset):
 
         # 1.读取mask的数据
         mask = np.load(self.files_A[index % len(self.files_A)])
-        mask = mask[:, :, np.newaxis]
-        mask = mask.astype(np.float)
-        mask = self.transform(mask).float()
+        # mask = mask[:, :, np.newaxis]  #---
+        # mask = mask.astype(np.float)  #---
+        mask = mask[np.newaxis, :, :]  #---
+        mask = mask.astype(np.float)  #---
+        mask = t.from_numpy(mask).float()  #---
 
         # 2.读取近场数据
         near_field = np.load(self.files_B[index % len(self.files_B)])
@@ -41,19 +43,22 @@ class MaskNfDataset(Dataset):
         # 2.2进行类型转换和维度扩充
         nf_real = nf_real.astype(np.float32)
         nf_imag = nf_imag.astype(np.float32)
-        nf_real = nf_real[:, :, np.newaxis]
-        nf_imag = nf_imag[:, :, np.newaxis]
+        # nf_real = nf_real[:, :, np.newaxis] ---
+        # nf_imag = nf_imag[:, :, np.newaxis] ---
+        nf_real = nf_real[np.newaxis, :, :] #---
+        nf_imag = nf_imag[np.newaxis, :, :] #---
 
         # 2.3根据是否合并或者读取实部虚部进行返回数据
         if self.combine:
-            nf = np.concatenate((nf_real, nf_imag), axis=2)
+            nf = np.concatenate((nf_real, nf_imag), axis=0)  #---
+            nf = t.from_numpy(nf) #---
             nf = self.transform(nf).float()
             return {"A": mask, "B": nf}
         else:
             if self.part == "real":
-                return {"A": mask, "B": self.transform(nf_real).float()}
+                return {"A": mask, "B": self.transform(t.from_numpy(nf_real)).float()}  #---
             else:
-                return {"A": mask, "B": self.transform(nf_imag).float()}
+                return {"A": mask, "B": self.transform(t.from_numpy(nf_imag)).float()}  #---
 
     def __len__(self):
         return max(len(self.files_A), len(self.files_B))
@@ -116,9 +121,9 @@ class MaskNfDatasetV2(Dataset):
         # 2.3根据是否合并或者读取实部虚部进行返回数据
         if self.combine:
             nf = np.concatenate((nf_real, nf_imag), axis=0)
-            nff = t.from_numpy(nf).float()
-            nf = self.transform(nff)
-            return {"A": mask, "B": nf, "C": mask_label, "D": nff }
+            nf = t.from_numpy(nf).float()
+            nf = self.transform(nf)
+            return {"A": mask, "B": nf, "C": mask_label}
         else:
             if self.part == "real":
                 return {"A": mask, "B": self.transform(t.from_numpy(nf_real).float()), "C": mask_label}

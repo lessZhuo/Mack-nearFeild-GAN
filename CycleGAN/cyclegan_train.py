@@ -120,9 +120,9 @@ image_save_plot = ImagePlotSave(output_shape, input_shape)
 
 # transformations
 transforms_ = [
-    transforms.ToTensor(),
+    # transforms.ToTensor(),
     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    transforms.Normalize([1], [1])
+    transforms.Normalize(mean=[0.0193, 0.0195], std=[0.0927, 0.1378])
 ]
 
 # Training data loader
@@ -166,7 +166,8 @@ if __name__ == '__main__':
     prev_time = time.time()
     # i, batch = next(enumerate(dataloader))
     best_acc, best_epoch = 0, 0
-    best_loss = 0.1
+    best_loss_AB = 0.01
+    best_loss_BA = 0.01
     for epoch in range(opt.epoch, opt.n_epochs):
         D_loss = []
         G_loss = []
@@ -372,12 +373,14 @@ if __name__ == '__main__':
         lr_scheduler_D_A.step()
         lr_scheduler_D_B.step()
 
-        if eval_mean_AB + eval_mean_BA < best_loss:
-            best_loss = eval_mean_AB + eval_mean_BA
+        if eval_mean_AB < best_loss_AB or eval_mean_BA < best_loss_BA :
+            best_loss_AB = min(eval_mean_AB, best_loss_AB)
+            best_loss_BA = min(eval_mean_BA, best_loss_BA)
             best_epoch = epoch
             print("epoch: %i" % epoch)
             print("n_epoch: %i" % opt.n_epochs)
-            print("best_loss: %f " % best_loss)
+            print("best_loss_AB: %f " % best_loss_AB)
+            print("best_loss_BA: %f " % best_loss_BA)
 
             torch.save(G_AB.state_dict(), '%s/G_AB_%d.pth' % (log_dir, epoch))
             torch.save(G_BA.state_dict(), '%s/G_BA_%d.pth' % (log_dir, epoch))
