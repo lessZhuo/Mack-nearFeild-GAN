@@ -19,7 +19,7 @@ import time
 since = time.time()
 if __name__ == "__main__":
 
-    BASE_DIR = r'../dataset/fcn'
+    BASE_DIR = r'../datasets/crop_256/new'
 
     now_time = datetime.now()
     time_str = datetime.strftime(now_time, '%m-%d_%H-%M-%S')
@@ -37,23 +37,21 @@ if __name__ == "__main__":
     milestones = [150, 225]  #
 
     transforms_ = [
-        transforms.ToTensor(),
-        # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        transforms.Normalize([1], [1]),
+        transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
     ]
 
     # ============================ step 1/5 数据 ============================
 
     # # 构建MyDataset实例
-    Load_train = LoadDataset(BASE_DIR, transforms_=transforms_, mode="train", combine=False, direction="x", part="real")
-    Load_val = LoadDataset(BASE_DIR, transforms_=transforms_, mode="text", combine=False, direction="x", part="real")
+    Load_train = LoadDataset(BASE_DIR, transforms_=transforms_, mode="train", combine=True, direction="x", part="real")
+    Load_val = LoadDataset(BASE_DIR, transforms_=transforms_, mode="text", combine=True, direction="x", part="real")
 
     # 构建DataLoder
     train_data = DataLoader(Load_train, BATCH_SIZE, num_workers=2)
     val_data = DataLoader(Load_val, 12, num_workers=2)
 
     # ============================ step 2/5 模型 ============================
-    fcn = FCN.FCN()
+    fcn = FCN.FCN(1, 2)
     fcn = fcn.to(device)
 
     # ============================ step 3/5 损失函数 ============================
@@ -95,13 +93,6 @@ if __name__ == "__main__":
             best_epoch = epoch
             path_checkpoint = os.path.join(log_dir, '{}.pth'.format(epoch))
             torch.save(fcn.state_dict(), path_checkpoint)
-            # checkpoint = {"model_state_dict": resnet_model.state_dict(),
-            #           "optimizer_state_dict": optimizer.state_dict(),
-            #           "epoch": epoch,
-            #           "best_acc": best_acc}
-            #
-            # path_checkpoint = os.path.join(log_dir, "checkpoint_best.pkl")
-            # torch.save(checkpoint, path_checkpoint)
 
     print(" done ~~~~ {}, best acc: {} in :{} epochs. ".format(datetime.strftime(datetime.now(), '%m-%d_%H-%M-%S'),
                                                                best_loss, best_epoch))

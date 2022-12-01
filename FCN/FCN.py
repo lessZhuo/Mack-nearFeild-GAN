@@ -29,10 +29,11 @@ pretrained_net = models.vgg16_bn(pretrained=False)
 
 
 class FCN(nn.Module):
-    def __init__(self):
+    def __init__(self, input_channel, output_channel):
         super().__init__()
-
-        self.bb1_1 = BB1(1, 4, kernel_size=3, stride=1)
+        self.input_channel = input_channel
+        self.output_channel = output_channel
+        self.bb1_1 = BB1(self.input_channel, 4, kernel_size=3, stride=1)
         self.bb1_2 = BB1_2(20, 4, kernel_size=3, stride=1)
         self.bb1_3 = BB1_3(20, 16, kernel_size=3, stride=1, padding=1)
         self.bb1_4 = BB1_4(16, 32, kernel_size=3, stride=1, padding=2)
@@ -49,7 +50,7 @@ class FCN(nn.Module):
         self.conv1 = nn.Conv2d(32, 16, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(16, 16, kernel_size=3, stride=1, padding=1)
         self.conv3 = nn.Conv2d(16, 8, kernel_size=3, stride=1, padding=0)
-        self.conv4 = nn.Conv2d(8, 1, kernel_size=3, stride=1, padding=1)
+        self.conv4 = nn.Conv2d(8, self.output_channel, kernel_size=3, stride=1, padding=1)
         self.active = nn.ReLU()
         self.bn = nn.BatchNorm2d(16, eps=0.001)
 

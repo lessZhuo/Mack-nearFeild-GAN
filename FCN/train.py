@@ -28,8 +28,8 @@ transforms_ = [
     transforms.Normalize([1], [1]),
 ]
 
-Load_train = LoadDataset(BASE_DIR,transforms_=transforms_,mode="train",combine=False,direction="x",part="real")
-Load_val = LoadDataset(BASE_DIR,transforms_=transforms_,mode="text",combine=False,direction="x",part="real")
+Load_train = LoadDataset(BASE_DIR, transforms_=transforms_, mode="train", combine=False, direction="x", part="real")
+Load_val = LoadDataset(BASE_DIR, transforms_=transforms_, mode="text", combine=False, direction="x", part="real")
 
 train_data = DataLoader(Load_train, BATCH_SIZE, shuffle=True, num_workers=1)
 val_data = DataLoader(Load_val, BATCH_SIZE, shuffle=True, num_workers=1)
@@ -63,16 +63,12 @@ class ModelTrainer(object):
             optimizer.step()
             train_loss.append(loss.item())
 
-
         return np.mean(train_loss)
 
     @staticmethod
     def evaluate(model, val_data, criterion, epoch, device, log_dir):
         net = model.eval()
         eval_loss = []
-        eval_acc = 0
-        eval_miou = 0
-        eval_class_acc = 0
 
         prec_time = datetime.now()
         for j, sample in enumerate(val_data):
@@ -83,24 +79,37 @@ class ModelTrainer(object):
 
             loss = criterion(out, valLabel)
             eval_loss.append(loss.item())
-            if epoch > 40:
+            if j % 100 == 0:
                 out_mask = out[0, 0, :, :].cpu().detach().numpy()
-                out_label = valLabel[0, 0, :, :].cpu().detach().numpy()
+                out_label_r = valLabel[0, 0, :, :].cpu().detach().numpy()
+                out_label_i = valLabel[0, 1, :, :].cpu().detach().numpy()
+
+                plt.figure(figsize=(14, 14), dpi=300)
+
+                x1 = plt.subplot(2, 2, 1)
                 plt.imshow(out_mask)
-                # plt.imsave('mask_%i_%i.png'%(epoch,j),out_mask,format='png')
                 plt.colorbar(fraction=0.05, pad=0.05)
-                plt.axis('off')
-                plt.savefig(os.path.join(log_dir, 'mask_%i_%i.png' % (epoch, j)))
-                plt.close()
-                plt.imshow(out_label)
-                # plt.imsave('label_%i_%i.png'%(epoch,j),out_label,format='png')
+                # plt.clim(-1.001, -0.95)
+                x1.set_title('mask')
+
+                x2 = plt.subplot(2, 2, 2)
+                plt.imshow(out_label_r)
                 plt.colorbar(fraction=0.05, pad=0.05)
-                plt.axis('off')
-                plt.savefig(os.path.join(log_dir, 'label_%i_%i.png' % (epoch, j)))
+                # plt.clim(-1.001, -0.95)
+                x2.set_title('NF_r')
+
+                x2 = plt.subplot(2, 2, 3)
+                plt.imshow(out_label_i)
+                plt.colorbar(fraction=0.05, pad=0.05)
+                # plt.clim(-1.001, -0.95)
+                x2.set_title('NF_i')
+
+                plt.subplots_adjust(wspace=0.4, hspace=0.05)
+                plt.savefig('%s/%i_%i.png' % (log_dir, epoch, j), bbox_inches='tight')
                 plt.close()
 
         return np.mean(eval_loss)
 
 
 if __name__ == "__main__":
-    ModelTrainer.train(fcn,train_data,criterion,optimizer,Epoch,device)
+    ModelTrainer.train(fcn, train_data, criterion, optimizer, Epoch, device)
