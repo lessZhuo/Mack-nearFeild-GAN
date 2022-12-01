@@ -35,7 +35,7 @@ parser.add_argument("--img_width", type=int, default=256, help="size of image wi
 parser.add_argument("--sample_interval", type=int, default=250, help="interval between saving generator outputs")
 parser.add_argument("--checkpoint_interval", type=int, default=-1, help="interval between saving model checkpoints")
 parser.add_argument("--n_residual_blocks", type=int, default=5, help="number of residual blocks in generator")
-parser.add_argument("--lambda_cyc", type=float, default=1.0, help="cycle loss weight")
+parser.add_argument("--lambda_cyc", type=float, default=10.0, help="cycle loss weight")
 parser.add_argument("--lambda_id", type=float, default=5.0, help="identity loss weight")
 parser.add_argument("--input_channels", type=int, default=2, help="number of input channels")
 parser.add_argument("--output_channels", type=int, default=2, help="number of image channels")
@@ -124,13 +124,13 @@ image_save_plot = ImagePlotSaveV2(output_shape, input_shape)
 
 # transformations
 transforms_ = [
-    transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
+    transforms.Normalize(mean=[0.193, 0.195], std=[0.927, 1.378])
 ]
 
 de_transforms_ = [
     # transforms.ToTensor(),
     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    transforms.Normalize(mean=[-1.0, -1.0], std=[2.0, 2.0]),
+    transforms.Normalize(mean=[-0.2082, -0.1415], std=[1.0787, 0.7257]),
 ]
 
 # Training data loader
@@ -231,7 +231,7 @@ if __name__ == '__main__':
             recov_B = G_AB(fake_A)
             loss_cycle_B = criterion_cycle(recov_B, real_B)
 
-            loss_cycle = loss_cycle_B * proportion + loss_cycle_A * (1 - proportion)
+            loss_cycle = loss_cycle_B * proportion + loss_cycle_A * (1 - proportion)*20
 
             # Total loss
             loss_G = loss_GAN + opt.lambda_cyc * loss_cycle  # + opt.lambda_id * loss_identity

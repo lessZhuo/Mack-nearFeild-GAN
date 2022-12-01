@@ -122,7 +122,7 @@ image_save_plot = ImagePlotSave(output_shape, input_shape)
 transforms_ = [
     # transforms.ToTensor(),
     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    transforms.Normalize(mean=[0.0193, 0.0195], std=[0.0927, 0.1378])
+    transforms.Normalize(mean=[0.193, 0.195], std=[0.927, 1.378])
 ]
 
 # Training data loader
