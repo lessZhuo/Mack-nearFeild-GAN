@@ -11,7 +11,6 @@ from train import ModelTrainer
 from common_tools import plot_line
 import torchvision.transforms as transforms
 
-
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 import time
@@ -50,8 +49,15 @@ if __name__ == "__main__":
     train_data = DataLoader(Load_train, BATCH_SIZE, num_workers=2)
     val_data = DataLoader(Load_val, 12, num_workers=2)
 
+    bw = False
+    if bw:
+        input_channel = 2
+        output_channel = 2
+    else:
+        input_channel = 1
+        output_channel = 2
     # ============================ step 2/5 模型 ============================
-    fcn = FCN.FCN(1, 2)
+    fcn = FCN.FCN(input_channel=input_channel, output_channel=output_channel)
     fcn = fcn.to(device)
 
     # ============================ step 3/5 损失函数 ============================
@@ -77,8 +83,8 @@ if __name__ == "__main__":
                 group['lr'] *= 0.5
 
         # 训练(data_loader, model, loss_f, optimizer, epoch_id, device, max_epoch)
-        loss_train = ModelTrainer.train(fcn, train_data, criterion, optimizer, epoch, device)
-        loss_valid = ModelTrainer.evaluate(fcn, val_data, criterion, epoch, device, log_dir)
+        loss_train = ModelTrainer.train(fcn, train_data, criterion, optimizer, epoch, device, bw)
+        loss_valid = ModelTrainer.evaluate(fcn, val_data, criterion, epoch, device, log_dir, bw)
         print("Epoch[{:0>3}/{:0>3}]  Train loss:{:.8f} Valid loss:{:.8f} LR:{}".format(
             epoch + 1, Epoch, loss_train, loss_valid, optimizer.param_groups[0]["lr"]))
 
@@ -87,11 +93,14 @@ if __name__ == "__main__":
 
         plt_x = np.arange(1, epoch + 2)
         plot_line(plt_x, loss_rec["train"], plt_x, loss_rec["valid"], mode="loss", out_dir=log_dir)
-
+        if bw:
+            sst = 'bw'
+        else:
+            sst = 'fw'
         if epoch > (Epoch / 2) and loss_valid < best_loss:
             best_loss = loss_valid
             best_epoch = epoch
-            path_checkpoint = os.path.join(log_dir, '{}.pth'.format(epoch))
+            path_checkpoint = os.path.join(log_dir, '{}_{}.pth'.format(epoch, sst))
             torch.save(fcn.state_dict(), path_checkpoint)
 
     print(" done ~~~~ {}, best acc: {} in :{} epochs. ".format(datetime.strftime(datetime.now(), '%m-%d_%H-%M-%S'),

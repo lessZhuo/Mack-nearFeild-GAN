@@ -1,4 +1,5 @@
 import os
+
 os.environ['NLS_LANG'] = 'SIMPLIFIED CHINESE_CHINA.UTF8'
 
 import os
@@ -27,9 +28,14 @@ class LoadDataset(Dataset):
     def __getitem__(self, index):
         # 1.读取mask的数据
         mask = np.load(self.files_A[index % len(self.files_A)])
-        mask = mask[np.newaxis, :, :]
-        mask = mask.astype(np.float)
-        mask = t.from_numpy(mask).float()
+        mask_label = t.from_numpy(mask).long()
+
+        mask_zero = mask ^ 1
+        mask_one = mask ^ 0
+
+        mask = np.array([mask_zero, mask_one])
+        mask = mask.astype(float)
+        mask = t.from_numpy(mask)
 
         # 2.读取近场数据
         near_field = np.load(self.files_B[index % len(self.files_B)])
@@ -54,14 +60,14 @@ class LoadDataset(Dataset):
             nf = t.from_numpy(nf)
             nf = self.transform(nf).float()
 
-            return {"A": mask, "B": nf}
+            return {"A": mask_label, "B": nf, "C": mask}
         else:
             if self.part == "real":
-                return {"A": mask, "B": self.transform(self.transform(nf_real)).float()}
+                return {"A": mask_label, "B": self.transform(self.transform(nf_real)).float(), "C": mask}
                 # return {"A": mask, "B": t.from_numpy(nf_real)}
             else:
                 # return {"A": mask, "B": self.transform(nf_imag)}
-                return {"A": mask, "B": self.transform(t.from_numpy(nf_imag)).float()}
+                return {"A": mask_label, "B": self.transform(t.from_numpy(nf_imag)).float(), "C": mask}
 
     def __len__(self):
         return max(len(self.files_A), len(self.files_B))
