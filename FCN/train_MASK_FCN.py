@@ -11,7 +11,7 @@ from train import ModelTrainer
 from common_tools import plot_line
 import torchvision.transforms as transforms
 
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
 import time
@@ -28,7 +28,7 @@ if __name__ == "__main__":
         os.makedirs(log_dir)
 
     crop_size = (300, 300)
-    Epoch = 1
+    Epoch = 50
     BATCH_SIZE = 50
     LR = 0.1
     log_interval = 1
@@ -44,7 +44,7 @@ if __name__ == "__main__":
 
     # # 构建MyDataset实例
     Load_train = LoadDataset(BASE_DIR, transforms_=transforms_, mode="train", combine=True, direction="x", part="real")
-    Load_val = LoadDataset(BASE_DIR, transforms_=transforms_, mode="text", combine=True, direction="x", part="real")
+    Load_val = LoadDataset(BASE_DIR, transforms_=transforms_, mode="test", combine=True, direction="x", part="real")
 
     # 构建DataLoder
     train_data = DataLoader(Load_train, BATCH_SIZE, num_workers=2)

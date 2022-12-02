@@ -189,6 +189,14 @@ if __name__ == '__main__':
         train_class_acc = 0
         torch.cuda.empty_cache()
 
+        if epoch % 20 == 0 and epoch != 0:
+            for group in optimizer_G.param_groups:
+                group['lr'] *= 0.5
+            for group in optimizer_D_A.param_groups:
+                group['lr'] *= 0.5
+            for group in optimizer_D_B.param_groups:
+                group['lr'] *= 0.5
+
         for i, batch in enumerate(dataloader):
             # 清除缓存
             torch.cuda.empty_cache()

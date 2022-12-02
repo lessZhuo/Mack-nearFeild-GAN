@@ -25,7 +25,7 @@ def bilinear_kernel(in_channels, out_channels, kernel_size):
     return torch.from_numpy(weight)
 
 
-pretrained_net = models.vgg16_bn(pretrained=False)
+# pretrained_net = models.vgg16_bn(pretrained=False)
 
 
 class FCN(nn.Module):
@@ -36,7 +36,7 @@ class FCN(nn.Module):
         self.bb1_1 = BB1(self.input_channel, 4, kernel_size=3, stride=1)
         self.bb1_2 = BB1_2(20, 4, kernel_size=3, stride=1)
         self.bb1_3 = BB1_3(20, 16, kernel_size=3, stride=1, padding=1)
-        self.bb1_4 = BB1_4(16, 32, kernel_size=3, stride=1, padding=2)
+        self.bb1_4 = BB1_4(16, 32, kernel_size=3, stride=1, padding=1)
         self.bb1_5 = BB1_5(32, 32, kernel_size=3, stride=1, padding=1)
 
         self.upsample_bb2_1 = nn.ConvTranspose2d(16, 16, 4, 2, 1, bias=False)
@@ -49,7 +49,7 @@ class FCN(nn.Module):
         self.upsample_bb2_3.weight.data = bilinear_kernel(8, 8, 4)
         self.conv1 = nn.Conv2d(32, 16, kernel_size=3, stride=1, padding=1)
         self.conv2 = nn.Conv2d(16, 16, kernel_size=3, stride=1, padding=1)
-        self.conv3 = nn.Conv2d(16, 8, kernel_size=3, stride=1, padding=0)
+        self.conv3 = nn.Conv2d(16, 8, kernel_size=3, stride=1, padding=1)
         self.conv4 = nn.Conv2d(8, self.output_channel, kernel_size=3, stride=1, padding=1)
         self.active = nn.ReLU()
         self.bn = nn.BatchNorm2d(16, eps=0.001)
@@ -68,7 +68,7 @@ class FCN(nn.Module):
         x = self.upsample_bb2_1(x)
         # print(x.shape)
         x = self.conv2(x)
-        # x = self.bn(x)
+        x = self.bn(x)
         x = self.active(x)
         x = self.upsample_bb2_2(x)
         # print(x.shape)
