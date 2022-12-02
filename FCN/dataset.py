@@ -29,6 +29,7 @@ class LoadDataset(Dataset):
         # 1.读取mask的数据
         mask = np.load(self.files_A[index % len(self.files_A)])
         mask_label = t.from_numpy(mask).long()
+        mask_source = t.from_numpy(mask[np.newaxis, :, :]).float()
 
         mask_zero = mask ^ 1
         mask_one = mask ^ 0
@@ -60,14 +61,15 @@ class LoadDataset(Dataset):
             nf = t.from_numpy(nf)
             nf = self.transform(nf).float()
 
-            return {"A": mask_label, "B": nf, "C": mask}
+            return {"A": mask_source, "B": nf, "C": mask, "D": mask_label}
         else:
             if self.part == "real":
-                return {"A": mask_label, "B": self.transform(self.transform(nf_real)).float(), "C": mask}
+                return {"A": mask_source, "B": self.transform(self.transform(nf_real)).float(), "C": mask,
+                        "D": mask_source}
                 # return {"A": mask, "B": t.from_numpy(nf_real)}
             else:
                 # return {"A": mask, "B": self.transform(nf_imag)}
-                return {"A": mask_label, "B": self.transform(t.from_numpy(nf_imag)).float(), "C": mask}
+                return {"A": mask_source, "B": self.transform(t.from_numpy(nf_imag)).float(), "C": mask, "D": mask_label}
 
     def __len__(self):
         return max(len(self.files_A), len(self.files_B))
