@@ -62,7 +62,10 @@ if __name__ == "__main__":
     fcn = fcn.to(device)
 
     # ============================ step 3/5 损失函数 ============================
-    criterion = nn.MSELoss().to(device)
+    if bw:
+        criterion = nn.NLLLoss().to(device)
+    else:
+        criterion = nn.MSELoss().to(device)
     # ============================ step 4/5 优化器 ============================
     # 冻结卷积层
     optimizer = optim.Adam(fcn.parameters(), lr=5e-4)
