@@ -91,9 +91,6 @@ class ModelTrainer(object):
                 # plt.clim(-1.001, -0.95)
                 x3.set_title('NF_i')
 
-
-
-
                 plt.subplots_adjust(wspace=0.4, hspace=0.05)
                 plt.savefig('%s/%i_%i.png' % (log_dir, epoch, j), bbox_inches='tight')
                 plt.close()
