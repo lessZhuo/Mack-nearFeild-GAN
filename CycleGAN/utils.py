@@ -352,6 +352,40 @@ class ImagePlotSaveV2:
         plt.savefig(os.path.join(out_dir, mark + r'loss.png'))
         plt.close()
 
+    # 绘制会议需要的训练曲线
+    def plot_line_v2(selft, epoch, loss_G, loss_D, valid_G_AB, train_G_AB, valid_miou, train_miou ,out_dir, mark='all'):
+
+        plt.figure(figsize=(28, 14), dpi=300)
+
+        plt.subplot(131)
+        plt.plot(epoch, loss_G, label='lossG', color='b', marker='o', markerfacecolor='b', markersize=10)
+        plt.plot(epoch, loss_D, label='lossD', color='r', marker='o', markerfacecolor='r', markersize=10)
+        plt.xlabel('Epoch', fontsize=30)
+        plt.tick_params(labelsize=30)
+        plt.legend(loc='best', prop={'size': 30})
+        plt.title('loss', fontsize=30)
+
+        plt.subplot(132)
+        plt.xlabel('Epoch', fontsize=30)
+        plt.plot(epoch, valid_G_AB, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=10)
+        plt.plot(epoch, train_G_AB, label='Train', color='r', marker='o', markerfacecolor='r', markersize=10)
+        plt.tick_params(labelsize=30)
+        plt.legend(loc='best', prop={'size': 30})
+        plt.title('G_AB_loss', fontsize=30)
+
+
+        plt.subplot(133)
+        plt.xlabel('Epoch', fontsize=30)
+        plt.plot(epoch, valid_miou, label='Valid_miou', color='b', marker='o', markerfacecolor='b', markersize=15)
+        plt.plot(epoch, train_miou, label='Train_miou', color='r', marker='o', markerfacecolor='r', markersize=10)
+        plt.tick_params(labelsize=30)
+        plt.legend(loc='best', prop={'size': 30})
+        plt.title('G_BA_MIOU', fontsize=30)
+
+        plt.subplots_adjust(wspace=0.4, hspace=0.4)
+        plt.savefig(os.path.join(out_dir, mark + r'loss.png'))
+        plt.close()
+
     def plot_line_test(selft, epoch, time_mean_AB, eval_mean_AB, eval_mean_AB_r, eval_mean_AB_i, time_mean_BA,
                        eval_mean_BA, out_dir):
         """

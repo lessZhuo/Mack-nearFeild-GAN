@@ -424,7 +424,10 @@ if __name__ == '__main__':
                                   loss_rec["G_BA_acc_valid"], loss_rec["G_BA_acc_train"],
                                   loss_rec["G_BA_class_acc_valid"], loss_rec["G_BA_class_acc_train"],
                                   out_dir=log_dir)
-        # plot_line(plt_x, loss_rec["loss_valid"], mode="xx_real loss", out_dir=log_dir)
+        image_save_plot.plot_line_v2(plt_x, loss_rec["loss_G"], loss_rec["loss_D"],
+                                     loss_rec["loss_G_AB_valid"],loss_rec["loss_G_AB_train"],
+                                     loss_rec["G_BA_Miou_valid"], loss_rec["G_BA_Miou_train"],
+                                     out_dir=log_dir, mark='all_v2')
         # ------------------------------------------temp-------------------------------------
         if epoch > 5:
             image_save_plot.plot_line(plt_x[5:], loss_rec["loss_G"][5:], loss_rec["loss_D"][5:],
@@ -435,6 +438,10 @@ if __name__ == '__main__':
                                       loss_rec["G_BA_acc_valid"][5:], loss_rec["G_BA_acc_train"][5:],
                                       loss_rec["G_BA_class_acc_valid"][5:], loss_rec["G_BA_class_acc_train"][5:],
                                       out_dir=log_dir, mark='temp')
+            image_save_plot.plot_line_v2(plt_x[5:], loss_rec["loss_G"][5:], loss_rec["loss_D"][5:],
+                                      loss_rec["loss_G_BA_valid"][5:], loss_rec["loss_G_AB_train"][5:],
+                                      loss_rec["G_BA_Miou_valid"][5:], loss_rec["G_BA_Miou_train"][5:],
+                                      out_dir=log_dir, mark='temp_v2')
 
         # Update learning rates
         lr_scheduler_G.step()
