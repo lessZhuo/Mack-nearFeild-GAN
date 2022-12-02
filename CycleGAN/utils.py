@@ -341,8 +341,6 @@ class ImagePlotSaveV2:
         plt.plot(epoch, train_miou, label='Train_miou', color='r', marker='o', markerfacecolor='r', markersize=15)
         plt.plot(epoch, valid_acc, label='Valid_acc', color='y', marker='o', markerfacecolor='y', markersize=15)
         plt.plot(epoch, train_acc, label='Train_acc', color='g', marker='o', markerfacecolor='g', markersize=15)
-        plt.plot(epoch, valid_class_acc, label='Valid_class_acc', color='c', marker='o', markerfacecolor='c', markersize=15)
-        plt.plot(epoch, train_class_acc, label='Train_class_acc', color='m', marker='o', markerfacecolor='m', markersize=15)
         plt.tick_params(labelsize=30)
         # location = 'upper right' if mode == 'loss' else 'upper left'
         plt.legend(loc='best', prop={'size': 30})
@@ -362,9 +360,9 @@ class ImagePlotSaveV2:
         plt.plot(epoch, loss_D, label='lossD', color='r', marker='o', markerfacecolor='r', markersize=10)
         plt.xlabel('Epoch', fontsize=20)
         plt.ylabel('loss', fontsize=20)
-        plt.tick_params(labelsize=30)
-        plt.legend(loc='best', prop={'size': 30})
-        plt.title('loss', fontsize=30)
+        plt.tick_params(labelsize=20)
+        plt.legend(loc='best', prop={'size': 20})
+        plt.title('loss', fontsize=20)
 
         plt.subplot(312)
         plt.xlabel('Epoch', fontsize=20)
@@ -372,8 +370,8 @@ class ImagePlotSaveV2:
         plt.plot(epoch, valid_G_AB, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=10)
         plt.plot(epoch, train_G_AB, label='Train', color='r', marker='o', markerfacecolor='r', markersize=10)
         plt.tick_params(labelsize=30)
-        plt.legend(loc='best', prop={'size': 30})
-        plt.title('G_AB', fontsize=30)
+        plt.legend(loc='best', prop={'size': 20})
+        plt.title('G_AB', fontsize=20)
 
 
         plt.subplot(313)
@@ -381,11 +379,11 @@ class ImagePlotSaveV2:
         plt.ylabel('MIOU', fontsize=20)
         plt.plot(epoch, valid_miou, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=10)
         plt.plot(epoch, train_miou, label='Train', color='r', marker='o', markerfacecolor='r', markersize=10)
-        plt.tick_params(labelsize=30)
-        plt.legend(loc='best', prop={'size': 30})
-        plt.title('G_BA', fontsize=30)
+        plt.tick_params(labelsize=20)
+        plt.legend(loc='best', prop={'size': 20})
+        plt.title('G_BA', fontsize=20)
 
-        plt.subplots_adjust(wspace=0.4, hspace=1)
+        plt.subplots_adjust(wspace=0.4, hspace=1.5)
         plt.savefig(os.path.join(out_dir, mark + r'loss.png'))
         plt.close()
 

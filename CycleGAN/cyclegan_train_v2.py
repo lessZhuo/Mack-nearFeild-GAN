@@ -22,13 +22,13 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1,0"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
-parser.add_argument("--n_epochs", type=int, default=100, help="number of epochs of training")
+parser.add_argument("--n_epochs", type=int, default=50, help="number of epochs of training")
 parser.add_argument("--dataset_name", type=str, default="monet2photo", help="name of the dataset")
 parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
-parser.add_argument("--lr", type=float, default=0.00005, help="adam: learning rate")
+parser.add_argument("--lr", type=float, default=0.0001, help="adam: learning rate")
 parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
-parser.add_argument("--decay_epoch", type=int, default=20, help="epoch from which to start lr decay")
+parser.add_argument("--decay_epoch", type=int, default=10, help="epoch from which to start lr decay")
 parser.add_argument("--n_cpu", type=int, default=2, help="number of cpu threads to use during batch generation")
 parser.add_argument("--img_height", type=int, default=256, help="size of image height")  # 128
 parser.add_argument("--img_width", type=int, default=256, help="size of image width")  # 128
@@ -189,13 +189,13 @@ if __name__ == '__main__':
         train_class_acc = 0
         torch.cuda.empty_cache()
 
-        if epoch % 20 == 0 and epoch != 0:
-            for group in optimizer_G.param_groups:
-                group['lr'] *= 0.5
-            for group in optimizer_D_A.param_groups:
-                group['lr'] *= 0.5
-            for group in optimizer_D_B.param_groups:
-                group['lr'] *= 0.5
+        # if epoch % 20 == 0 and epoch != 0:
+        #     for group in optimizer_G.param_groups:
+        #         group['lr'] *= 0.5
+        #     for group in optimizer_D_A.param_groups:
+        #         group['lr'] *= 0.5
+        #     for group in optimizer_D_B.param_groups:
+        #         group['lr'] *= 0.5
 
         for i, batch in enumerate(dataloader):
             # 清除缓存
