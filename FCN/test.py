@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
         prec_time = datetime.now()
         for j, sample in enumerate(data):
-            valImg = Variable(sample['A'].to(device)).float()
+            valImg = Variable(sample['A'].to(device))
             valLabel = Variable(sample['B'].to(device))
 
             prev_time = time.time()
