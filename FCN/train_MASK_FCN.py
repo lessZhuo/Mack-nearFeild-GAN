@@ -49,7 +49,8 @@ if __name__ == "__main__":
     train_data = DataLoader(Load_train, BATCH_SIZE, num_workers=2)
     val_data = DataLoader(Load_val, 12, num_workers=2)
 
-    bw = False
+    # bw = False
+    bw = True
     if bw:
         input_channel = 2
         output_channel = 2

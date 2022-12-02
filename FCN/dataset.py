@@ -31,13 +31,6 @@ class LoadDataset(Dataset):
         mask_label = t.from_numpy(mask).long()
         mask_source = t.from_numpy(mask[np.newaxis, :, :]).float()
 
-        mask_zero = mask ^ 1
-        mask_one = mask ^ 0
-
-        mask = np.array([mask_zero, mask_one])
-        mask = mask.astype(float)
-        mask = t.from_numpy(mask)
-
         # 2.读取近场数据
         near_field = np.load(self.files_B[index % len(self.files_B)])
 
@@ -61,15 +54,14 @@ class LoadDataset(Dataset):
             nf = t.from_numpy(nf)
             nf = self.transform(nf).float()
 
-            return {"A": mask_source, "B": nf, "C": mask, "D": mask_label}
+            return {"A": mask_source, "B": nf, "C": mask_label}
         else:
             if self.part == "real":
-                return {"A": mask_source, "B": self.transform(self.transform(nf_real)).float(), "C": mask,
-                        "D": mask_source}
+                return {"A": mask_source, "B": self.transform(self.transform(nf_real)).float(), "C": mask_label}
                 # return {"A": mask, "B": t.from_numpy(nf_real)}
             else:
                 # return {"A": mask, "B": self.transform(nf_imag)}
-                return {"A": mask_source, "B": self.transform(t.from_numpy(nf_imag)).float(), "C": mask, "D": mask_label}
+                return {"A": mask_source, "B": self.transform(t.from_numpy(nf_imag)).float(), "C": mask_label}
 
     def __len__(self):
         return max(len(self.files_A), len(self.files_B))
