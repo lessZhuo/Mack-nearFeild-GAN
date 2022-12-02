@@ -60,7 +60,7 @@ if __name__ == "__main__":
     # ============================ step 2/5 模型 ============================
     fcn = FCN.FCN(1, 2)
 
-    fcn.load_state_dict(torch.load(r"C:\Users\Administrator\PycharmProjects\Mack-nearFeild-GAN\results\fcn\49.pth", map_location=torch.device('cpu')))
+    fcn.load_state_dict(torch.load(r"F:\less\results\fcn\12-01_21-04-24\49.pth"))
     fcn = fcn.to(device)
 
     # ============================ step 3/5 损失函数 ============================
@@ -77,7 +77,7 @@ if __name__ == "__main__":
 
         prec_time = datetime.now()
         for j, sample in enumerate(data):
-            valImg = Variable(sample['A'].to(device))
+            valImg = Variable(sample['A'].to(device)).float()
             valLabel = Variable(sample['B'].to(device))
 
             prev_time = time.time()
