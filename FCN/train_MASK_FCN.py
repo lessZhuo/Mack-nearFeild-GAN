@@ -78,7 +78,7 @@ if __name__ == "__main__":
     loss_rec = {"train": [], "valid": []}
 
     best_acc, best_epoch = 0, 0
-    best_loss = 0.001
+    best_loss = 0.003
     for epoch in range(start_epoch + 1, Epoch):
 
         print('Epoch is [{}/{}]'.format(epoch + 1, Epoch))

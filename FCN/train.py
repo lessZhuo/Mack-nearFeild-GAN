@@ -17,16 +17,16 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = 'True'
 
 def save_img(mask, near_field, label, epoch, num, log_dir, bw=False):
     if bw:
-        mask = mask.max(dim=1)[1].data
         label = label.max(dim=1)[1].data
+        mask = mask[0, :, :].cpu().detach().numpy()
+        label_1 = label[0, :, :].cpu().detach().numpy()
+    else:
+        mask = mask[0, 0, :, :].cpu().detach().numpy()
+        label_1 = label[0, 0, :, :].cpu().detach().numpy()
+        label_2 = label[0, 1, :, :].cpu().detach().numpy()
 
-    mask = mask[0, 0, :, :].cpu().detach().numpy()
     nf_r = near_field[0, 0, :, :].cpu().detach().numpy()
     nf_i = near_field[0, 1, :, :].cpu().detach().numpy()
-    label_1 = label[0, 0, :, :].cpu().detach().numpy()
-
-    if bw is False:
-        label_2 = label[0, 1, :, :].cpu().detach().numpy()
 
     plt.figure(figsize=(14, 14), dpi=300)
 
