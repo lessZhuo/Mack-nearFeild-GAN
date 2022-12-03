@@ -17,7 +17,11 @@ os.environ["KMP_DUPLICATE_LIB_OK"] = 'True'
 
 def save_img(mask, near_field, label, epoch, num, log_dir, bw=False):
     if bw:
+        print(label)
+        print(label.shape)
         label = label.max(dim=1)[1].data
+        print(label.shape)
+        print(label)
         mask = mask[0, :, :].cpu().detach().numpy()
         label_1 = label[0, :, :].cpu().detach().numpy()
     else:
@@ -53,19 +57,19 @@ def save_img(mask, near_field, label, epoch, num, log_dir, bw=False):
         plt.imshow(label_1)
         plt.colorbar(fraction=0.05, pad=0.05)
         # plt.clim(-1.001, -0.95)
-        x4.set_title('label_mask')
+        x4.set_title('out_mask')
     else:
         x5 = plt.subplot(2, 3, 5)
         plt.imshow(label_1)
         plt.colorbar(fraction=0.05, pad=0.05)
         # plt.clim(-1.001, -0.95)
-        x5.set_title('label_NF_i')
+        x5.set_title('out_NF_i')
 
         x6 = plt.subplot(2, 3, 6)
         plt.imshow(label_2)
         plt.colorbar(fraction=0.05, pad=0.05)
         # plt.clim(-1.001, -0.95)
-        x6.set_title('label_NF_i')
+        x6.set_title('out_NF_i')
 
     plt.subplots_adjust(wspace=0.4, hspace=0.05)
     plt.savefig('%s/%i_%i.png' % (log_dir, epoch, num), bbox_inches='tight')

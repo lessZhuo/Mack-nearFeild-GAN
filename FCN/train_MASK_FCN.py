@@ -37,6 +37,7 @@ if __name__ == "__main__":
 
     transforms_ = [
         transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
+        # transforms.Normalize(mean=[0.193, 0.195], std=[0.927, 1.378])
     ]
 
     # ============================ step 1/5 数据 ============================

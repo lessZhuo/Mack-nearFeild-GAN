@@ -17,6 +17,8 @@ from train import ModelTrainer
 from common_tools import plot_line_v2
 import torchvision.transforms as transforms
 from torch.autograd import Variable
+import torch.nn.functional as F
+from train import save_img
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -40,13 +42,13 @@ if __name__ == "__main__":
     milestones = [150, 225]  #
 
     transforms_ = [
-        transforms.Normalize(mean=[0.193, 0.195], std=[0.927, 1.378])
+        # transforms.Normalize(mean=[0.193, 0.195], std=[0.927, 1.378])
+        transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
     ]
 
     de_transforms_ = [
-        # transforms.ToTensor(),
-        # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-        transforms.Normalize(mean=[-0.2082, -0.1415], std=[1.0787, 0.7257]),
+        # transforms.Normalize(mean=[-0.2082, -0.1415], std=[1.0787, 0.7257]),
+        transforms.Normalize(mean=[-0.0062, -0.0048], std=[0.9984, 0.9997])
     ]
 
     # ============================ step 1/5 数据 ============================
@@ -57,14 +59,26 @@ if __name__ == "__main__":
     # 构建DataLoder
     data = DataLoader(Load_train, BATCH_SIZE, num_workers=2)
 
+    bw = True
+    if bw:
+        input_channel = 2
+        output_channel = 2
+    else:
+        input_channel = 1
+        output_channel = 2
     # ============================ step 2/5 模型 ============================
-    fcn = FCN.FCN(1, 2)
+    fcn = FCN.FCN(input_channel=input_channel, output_channel=output_channel)
+    fcn = fcn.to(device)
 
-    fcn.load_state_dict(torch.load(r"F:\less\results\fcn\12-01_21-04-24\49.pth"))
+    fcn.load_state_dict(
+        torch.load(r"C:\Users\Administrator\Desktop\paper_train\fcn\46_bw.pth", map_location=torch.device('cpu')))
     fcn = fcn.to(device)
 
     # ============================ step 3/5 损失函数 ============================
-    criterion = nn.MSELoss().to(device)
+    if bw:
+        criterion = nn.NLLLoss().to(device)
+    else:
+        criterion = nn.MSELoss().to(device)
 
     tf = transforms.Compose(de_transforms_)
 
@@ -77,59 +91,35 @@ if __name__ == "__main__":
 
         prec_time = datetime.now()
         for j, sample in enumerate(data):
-            valImg = Variable(sample['A'].to(device))
-            valLabel = Variable(sample['B'].to(device))
+            if bw:
+                valImg = Variable(sample['B'].to(device))
+                valLabel = Variable(sample['C'].to(device))
+            else:
+                valImg = Variable(sample['A'].to(device))
+                valLabel = Variable(sample['B'].to(device))
 
             prev_time = time.time()
             out = net(valImg)
+            if bw:
+                out = F.log_softmax(out, dim=1)
             curr_time = time.time()
 
             times.append(curr_time - prev_time)
 
             loss = criterion(out, valLabel)
             eval_loss.append(loss.item())
+
+            if bw:
+                valImg = tf(valImg)
+            else:
+                out = tf(out)
+                valLabel = tf(valLabel)
+
             if j % 100 == 0:
-                out_mask = valImg[0, 0, :, :].cpu().detach().numpy()
-                label_r = tf(valLabel)[0, 0, :, :].cpu().detach().numpy()
-                label_i = tf(valLabel)[0, 1, :, :].cpu().detach().numpy()
-                out_label_r = tf(out)[0, 0, :, :].cpu().detach().numpy()
-                out_label_i = tf(out)[0, 1, :, :].cpu().detach().numpy()
-
-                plt.figure(figsize=(14, 14), dpi=300)
-
-                x1 = plt.subplot(2, 3, 1)
-                plt.imshow(out_mask)
-                plt.colorbar(fraction=0.05, pad=0.05)
-                # plt.clim(-1.001, -0.95)
-                x1.set_title('mask')
-
-                x2 = plt.subplot(2, 3, 2)
-                plt.imshow(out_label_r)
-                plt.colorbar(fraction=0.05, pad=0.05)
-                # plt.clim(-1.001, -0.95)
-                x2.set_title('out_NF_r')
-
-                x3 = plt.subplot(2, 3, 3)
-                plt.imshow(out_label_i)
-                plt.colorbar(fraction=0.05, pad=0.05)
-                # plt.clim(-1.001, -0.95)
-                x3.set_title('out_NF_i')
-
-                x3 = plt.subplot(2, 3, 6)
-                plt.imshow(label_i)
-                plt.colorbar(fraction=0.05, pad=0.05)
-                # plt.clim(-1.001, -0.95)
-                x3.set_title('NF_i')
-
-                x3 = plt.subplot(2, 3, 5)
-                plt.imshow(label_r)
-                plt.colorbar(fraction=0.05, pad=0.05)
-                # plt.clim(-1.001, -0.95)
-                x3.set_title('NF_r')
-
-                plt.subplots_adjust(wspace=0.4, hspace=0.05)
-                plt.savefig('%s/%i_%i.png' % (log_dir, epoch, j), bbox_inches='tight')
-                plt.close()
+                if bw:
+                    save_img(valLabel, valImg, out, epoch, j, log_dir, bw)
+                else:
+                    save_img(valImg, valLabel, out, epoch, j, log_dir, bw)
 
         eval_mean = np.mean(eval_loss)
         time_mean = np.mean(times)
@@ -137,7 +127,6 @@ if __name__ == "__main__":
         print(
             "Epoch[{:0>3}/{:0>3}]  time:{:.6f}  loss:{:.9f} ".format(
                 epoch, Epoch, time_mean, eval_mean))
-
 
         plt_x = np.arange(1, epoch + 2)
         plot_line_v2(plt_x, rec["loss"], rec["time"], mode="test", out_dir=log_dir)
