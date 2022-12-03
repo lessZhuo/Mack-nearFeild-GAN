@@ -36,8 +36,8 @@ if __name__ == "__main__":
     milestones = [150, 225]  #
 
     transforms_ = [
-        transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
-        # transforms.Normalize(mean=[0.193, 0.195], std=[0.927, 1.378])
+        # transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
+        transforms.Normalize(mean=[0.193, 0.195], std=[0.927, 1.378])
     ]
 
     # ============================ step 1/5 数据 ============================
@@ -50,8 +50,8 @@ if __name__ == "__main__":
     train_data = DataLoader(Load_train, BATCH_SIZE, num_workers=2)
     val_data = DataLoader(Load_val, 12, num_workers=2)
 
-    # bw = False
-    bw = True
+    bw = False
+    # bw = True
     if bw:
         input_channel = 2
         output_channel = 2

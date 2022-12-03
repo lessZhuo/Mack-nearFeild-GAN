@@ -385,7 +385,7 @@ class ImagePlotSaveV2:
         plt.legend(loc='best', prop={'size': 20})
         plt.title('G_BA', fontsize=20)
 
-        plt.subplots_adjust(wspace=0.4, hspace=1.0)
+        plt.subplots_adjust(wspace=0.4, hspace=0.5)
         plt.savefig(os.path.join(out_dir, mark + r'loss.png'))
         plt.close()
 
