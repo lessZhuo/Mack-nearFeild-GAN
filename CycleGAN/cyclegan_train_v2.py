@@ -178,6 +178,7 @@ if __name__ == '__main__':
     best_acc, best_epoch = 0, 0
     best_loss = 0.01
     best_miou = 0
+    lambda_cyc_A = 10
 
     for epoch in range(opt.epoch, opt.n_epochs):
         D_loss = []
@@ -188,14 +189,8 @@ if __name__ == '__main__':
         train_miou = 0
         train_class_acc = 0
         torch.cuda.empty_cache()
-
-        # if epoch % 20 == 0 and epoch != 0:
-        #     for group in optimizer_G.param_groups:
-        #         group['lr'] *= 0.5
-        #     for group in optimizer_D_A.param_groups:
-        #         group['lr'] *= 0.5
-        #     for group in optimizer_D_B.param_groups:
-        #         group['lr'] *= 0.5
+        if epoch % 10 == 0 and epoch != 0:
+            lambda_cyc_A *= 1.5
 
         for i, batch in enumerate(dataloader):
             # 清除缓存
@@ -239,7 +234,7 @@ if __name__ == '__main__':
             recov_B = G_AB(fake_A)
             loss_cycle_B = criterion_cycle(recov_B, real_B)
 
-            loss_cycle = loss_cycle_B * proportion + loss_cycle_A * (1 - proportion)*20
+            loss_cycle = loss_cycle_B * proportion + loss_cycle_A * (1 - proportion) * lambda_cyc_A
 
             # Total loss
             loss_G = loss_GAN + opt.lambda_cyc * loss_cycle  # + opt.lambda_id * loss_identity
@@ -342,7 +337,7 @@ if __name__ == '__main__':
             if batches_done % opt.sample_interval == 0:
                 image_save_plot.sample_images_v2(epoch, batches_done, log_dir, real_A=real_A, real_B=real_B,
                                                  fake_A=fake_A,
-                                                 fake_B=fake_B,de_transforms_=de_transforms_)
+                                                 fake_B=fake_B, de_transforms_=de_transforms_)
 
         train_mean_AB = np.mean(train_loss_AB)
         train_mean_BA = np.mean(train_loss_BA)
@@ -425,7 +420,7 @@ if __name__ == '__main__':
                                   loss_rec["G_BA_class_acc_valid"], loss_rec["G_BA_class_acc_train"],
                                   out_dir=log_dir)
         image_save_plot.plot_line_v2(plt_x, loss_rec["loss_G"], loss_rec["loss_D"],
-                                     loss_rec["loss_G_AB_valid"],loss_rec["loss_G_AB_train"],
+                                     loss_rec["loss_G_AB_valid"], loss_rec["loss_G_AB_train"],
                                      loss_rec["G_BA_Miou_valid"], loss_rec["G_BA_Miou_train"],
                                      out_dir=log_dir, mark='all_v2')
         # ------------------------------------------temp-------------------------------------
@@ -439,9 +434,9 @@ if __name__ == '__main__':
                                       loss_rec["G_BA_class_acc_valid"][5:], loss_rec["G_BA_class_acc_train"][5:],
                                       out_dir=log_dir, mark='temp')
             image_save_plot.plot_line_v2(plt_x[5:], loss_rec["loss_G"][5:], loss_rec["loss_D"][5:],
-                                      loss_rec["loss_G_BA_valid"][5:], loss_rec["loss_G_AB_train"][5:],
-                                      loss_rec["G_BA_Miou_valid"][5:], loss_rec["G_BA_Miou_train"][5:],
-                                      out_dir=log_dir, mark='temp_v2')
+                                         loss_rec["loss_G_BA_valid"][5:], loss_rec["loss_G_AB_train"][5:],
+                                         loss_rec["G_BA_Miou_valid"][5:], loss_rec["G_BA_Miou_train"][5:],
+                                         out_dir=log_dir, mark='temp_v2')
 
         # Update learning rates
         lr_scheduler_G.step()

@@ -309,42 +309,44 @@ class ImagePlotSaveV2:
         plt.xlabel('Epoch', fontsize=30)
         plt.tick_params(labelsize=30)
         # # location = 'upper right' if mode == 'loss' else 'upper left'
-        plt.legend(loc='best', prop={'size': 30})
+        plt.legend(loc='best', prop={'size': 20})
         # # plt.gca().axes.get_xaxis().set_visible(False)
         plt.title('loss', fontsize=30)
 
         plt.subplot(222)
 
         plt.xlabel('Epoch', fontsize=30)
+        plt.ylabel('Loss', fontsize=30)
         plt.plot(epoch, valid_G_AB, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=15)
         plt.plot(epoch, train_G_AB, label='Train', color='r', marker='o', markerfacecolor='r', markersize=15)
         plt.tick_params(labelsize=30)
         # location = 'upper right' if mode == 'loss' else 'upper left'
-        plt.legend(loc='best', prop={'size': 30})
+        plt.legend(loc='best', prop={'size': 20})
         plt.title('G_AB', fontsize=30)
 
         plt.subplot(223)
 
         plt.xlabel('Epoch', fontsize=30)
+        plt.ylabel('Loss', fontsize=30)
         plt.plot(epoch, valid_G_BA, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=15)
         plt.plot(epoch, train_G_BA, label='Train', color='r', marker='o', markerfacecolor='r', markersize=15)
         plt.tick_params(labelsize=30)
         # location = 'upper right' if mode == 'loss' else 'upper left'
-        plt.legend(loc='best', prop={'size': 30})
+        plt.legend(loc='best', prop={'size': 20})
         plt.title('G_BA', fontsize=30)
         plt.subplots_adjust(wspace=0.4, hspace=0.4)
 
         plt.subplot(224)
 
         plt.xlabel('Epoch', fontsize=30)
+        plt.ylabel('MIOU', fontsize=30)
         plt.plot(epoch, valid_miou, label='Valid_miou', color='b', marker='o', markerfacecolor='b', markersize=15)
         plt.plot(epoch, train_miou, label='Train_miou', color='r', marker='o', markerfacecolor='r', markersize=15)
         plt.plot(epoch, valid_acc, label='Valid_acc', color='y', marker='o', markerfacecolor='y', markersize=15)
         plt.plot(epoch, train_acc, label='Train_acc', color='g', marker='o', markerfacecolor='g', markersize=15)
         plt.tick_params(labelsize=30)
-        # location = 'upper right' if mode == 'loss' else 'upper left'
-        plt.legend(loc='best', prop={'size': 30})
-        plt.title('G_BA效果', fontsize=30)
+        plt.legend(loc='best', prop={'size': 20})
+        plt.title('G_BA', fontsize=30)
         plt.subplots_adjust(wspace=0.4, hspace=0.4)
 
         plt.savefig(os.path.join(out_dir, mark + r'loss.png'))
@@ -353,7 +355,7 @@ class ImagePlotSaveV2:
     # 绘制会议需要的训练曲线
     def plot_line_v2(selft, epoch, loss_G, loss_D, valid_G_AB, train_G_AB, valid_miou, train_miou ,out_dir, mark='all'):
 
-        plt.figure(figsize=(28, 14), dpi=300)
+        plt.figure(figsize=(20, 40), dpi=300)
 
         plt.subplot(311)
         plt.plot(epoch, loss_G, label='lossG', color='b', marker='o', markerfacecolor='b', markersize=10)
@@ -369,7 +371,7 @@ class ImagePlotSaveV2:
         plt.ylabel('MSE', fontsize=20)
         plt.plot(epoch, valid_G_AB, label='Valid', color='b', marker='o', markerfacecolor='b', markersize=10)
         plt.plot(epoch, train_G_AB, label='Train', color='r', marker='o', markerfacecolor='r', markersize=10)
-        plt.tick_params(labelsize=30)
+        plt.tick_params(labelsize=20)
         plt.legend(loc='best', prop={'size': 20})
         plt.title('G_AB', fontsize=20)
 
@@ -383,7 +385,7 @@ class ImagePlotSaveV2:
         plt.legend(loc='best', prop={'size': 20})
         plt.title('G_BA', fontsize=20)
 
-        plt.subplots_adjust(wspace=0.4, hspace=1.5)
+        plt.subplots_adjust(wspace=0.4, hspace=1.0)
         plt.savefig(os.path.join(out_dir, mark + r'loss.png'))
         plt.close()
 
