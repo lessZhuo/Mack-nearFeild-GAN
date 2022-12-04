@@ -60,6 +60,7 @@ if __name__ == "__main__":
     # 构建DataLoder
     data = DataLoader(Load_train, BATCH_SIZE, num_workers=2)
 
+    # bw = False
     bw = True
     if bw:
         input_channel = 2
@@ -72,8 +73,10 @@ if __name__ == "__main__":
     fcn = fcn.to(device)
 
     fcn.load_state_dict(
-        torch.load(r"C:\Users\Administrator\Desktop\paper_train\fcn\46_bw.pth", map_location=torch.device('cpu')))
+        torch.load(r"F:\less\results\fcn\12-03_13-58-39\48_bw.pth"))
     fcn = fcn.to(device)
+    # F:\less\results\fcn\12-03_14-33-13\49_fw.pth loss = 0.031224878 time = 0.002920
+    # F:\less\results\fcn\12-03_13-58-39\48_bw.pth loss = 0.049792453 time = 0.003151 miou = 0.934324
 
     # ============================ step 3/5 损失函数 ============================
     if bw:
