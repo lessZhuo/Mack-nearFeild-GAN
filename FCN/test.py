@@ -19,6 +19,7 @@ import torchvision.transforms as transforms
 from torch.autograd import Variable
 import torch.nn.functional as F
 from train import save_img
+from evalution_segmentaion import eval_semantic_segmentation
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 
@@ -88,6 +89,7 @@ if __name__ == "__main__":
         net = fcn.eval()
         eval_loss = []
         times = []
+        miou = 0
 
         prec_time = datetime.now()
         for j, sample in enumerate(data):
@@ -110,7 +112,13 @@ if __name__ == "__main__":
             eval_loss.append(loss.item())
 
             if bw:
+                pre_label = out.max(dim=1)[1].data.cpu().numpy()
+                pre_label = [i for i in pre_label]
+                true_label = valLabel.data.cpu().numpy()
+                true_label = [i for i in true_label]
                 valImg = tf(valImg)
+                eval_metrix = eval_semantic_segmentation(pre_label, true_label)
+                miou += eval_metrix['miou']
             else:
                 out = tf(out)
                 valLabel = tf(valLabel)
@@ -123,10 +131,14 @@ if __name__ == "__main__":
 
         eval_mean = np.mean(eval_loss)
         time_mean = np.mean(times)
+        miou_mean = miou/len(data)
+
         rec["loss"].append(eval_mean), rec["time"].append(time_mean)
         print(
             "Epoch[{:0>3}/{:0>3}]  time:{:.6f}  loss:{:.9f} ".format(
                 epoch, Epoch, time_mean, eval_mean))
+        if bw :
+            print(r"miou:{:.6f}".format(miou_mean))
 
         plt_x = np.arange(1, epoch + 2)
         plot_line_v2(plt_x, rec["loss"], rec["time"], mode="test", out_dir=log_dir)
