@@ -11,7 +11,7 @@ from torchvision.utils import save_image, make_grid
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torch.autograd import Variable
-from models import *
+from models_sa import *
 from datasets import *
 from utils import *
 import torch
@@ -22,7 +22,7 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1,0"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
-parser.add_argument("--n_epochs", type=int, default=100, help="number of epochs of training")
+parser.add_argument("--n_epochs", type=int, default=50, help="number of epochs of training")
 parser.add_argument("--dataset_name", type=str, default="monet2photo", help="name of the dataset")
 parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.0001, help="adam: learning rate")
@@ -178,7 +178,7 @@ if __name__ == '__main__':
     best_acc, best_epoch = 0, 0
     best_loss = 0.01
     best_miou = 0
-    lambda_cyc_A = 20
+    lambda_cyc_A = 10
 
     for epoch in range(opt.epoch, opt.n_epochs):
         D_loss = []
@@ -310,8 +310,8 @@ if __name__ == '__main__':
             #  vail train Progress
             # --------------
 
-            net_G_AB = G_AB.train()
-            net_G_BA = G_BA.train()
+            net_G_AB = G_AB.eval()
+            net_G_BA = G_BA.eval()
 
             fake_B = net_G_AB(real_A)
             fake_A = net_G_BA(real_B)

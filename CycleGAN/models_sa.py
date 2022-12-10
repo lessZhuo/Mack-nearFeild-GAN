@@ -172,9 +172,9 @@ class GeneratorResNet(nn.Module):
         self.attn2 = Self_Attn(256, 'relu')
         self.model_res = nn.Sequential(*model_res)
         self.layer_up_1 = nn.Sequential(*layer_up_1)
-        self.attn3 = Self_Attn(256, 'relu')
+        self.attn3 = Self_Attn(128, 'relu')
         self.layer_up_2 = nn.Sequential(*layer_up_2)
-        self.attn4 = Self_Attn(128, 'relu')
+        self.attn4 = Self_Attn(64, 'relu')
         self.model_out = nn.Sequential(*model_out)
 
     def forward(self, x):

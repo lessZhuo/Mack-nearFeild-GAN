@@ -17,12 +17,11 @@ from utils import *
 import torch
 from evalution_segmentaion import eval_semantic_segmentation
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "1,0"
 # ---------------------------------参数设置---------------------------------------------
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
-parser.add_argument("--n_epochs", type=int, default=100, help="number of epochs of training")
+parser.add_argument("--n_epochs", type=int, default=10, help="number of epochs of training")
 parser.add_argument("--dataset_name", type=str, default="monet2photo", help="name of the dataset")
 parser.add_argument("--batch_size", type=int, default=1, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.0001, help="adam: learning rate")
@@ -47,6 +46,7 @@ opt = parser.parse_args()
 os.makedirs("../result/cycleGan/images/%s" % opt.dataset_name, exist_ok=True)
 os.makedirs("../result/cycleGan/saved_models/%s" % opt.dataset_name, exist_ok=True)
 
+device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 # Losses
 
 criterion_NLL = torch.nn.NLLLoss()
@@ -63,7 +63,7 @@ output_shape = (opt.output_channels, opt.img_height, opt.img_width)
 G_AB = GeneratorResNet(input_shape, output_shape, opt.n_residual_blocks, fw=True)
 G_BA = GeneratorResNet(output_shape, input_shape, opt.n_residual_blocks, fw=False)
 
-device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+
 
 if cuda:
     G_AB = G_AB.cuda()
@@ -72,8 +72,8 @@ if cuda:
     criterion_NLL.cuda()
 
 # ---------------------------------设置加载的参数---------------------------------------------
-G_AB.load_state_dict(torch.load(r"C:\Users\Administrator\Desktop\paper_train\cycleGAN\G_AB_24.pth"))
-G_BA.load_state_dict(torch.load(r"C:\Users\Administrator\Desktop\paper_train\cycleGAN\G_BA_24.pth"))
+G_AB.load_state_dict(torch.load(r"F:\less\results\cycleGan\12-03_22-35\G_AB_24.pth"))
+G_BA.load_state_dict(torch.load(r"F:\less\results\cycleGan\12-03_22-35\G_BA_24.pth"))
 
 # save image and plot loss line
 image_save_plot = ImagePlotSaveV2(output_shape, input_shape)
@@ -91,9 +91,9 @@ de_transforms_ = [
 
 # Training data loader
 dataloader = DataLoader(
-    MaskNfDatasetV2("../datasets/crop_256/new", transforms_=transforms_, combine=True, direction="x"),
+    MaskNfDatasetV2("../datasets/crop_256/new", transforms_=transforms_, mode="test", combine=True, direction="x"),
     batch_size=opt.batch_size,
-    shuffle=True,
+    shuffle=False,
     num_workers=opt.n_cpu,
 )
 
@@ -158,8 +158,8 @@ if __name__ == '__main__':
             prev_time = time.time()
             fake_B = net_G_AB(real_A)
             curr_time = time.time()
-
-            times_AB.append(curr_time - prev_time)
+            time_AB = curr_time - prev_time
+            times_AB.append(time_AB)
             loss = criterion_Vail(fake_B, real_B)
             loss_r = criterion_Vail(fake_B[:, 0, :, :], real_B[:, 0, :, :])
             loss_i = criterion_Vail(fake_B[:, 1, :, :], real_B[:, 1, :, :])
@@ -171,7 +171,8 @@ if __name__ == '__main__':
             prev_time = time.time()
             fake_A = net_G_BA(real_B)
             curr_time = time.time()
-            times_BA.append(curr_time - prev_time)
+            time_BA = curr_time - prev_time
+            times_BA.append(time_BA)
 
             loss_BA = criterion_NLL(fake_A, real_A_label)
             eval_loss_BA.append(loss_BA.item())
@@ -195,7 +196,7 @@ if __name__ == '__main__':
 
             # Print log
             sys.stdout.write(
-                "\r[Epoch %d/%d] [Batch %d/%d] [G_AB MSE: %f real : %f imag : %f] [G_BA NLL: %f, miou: %f] "
+                "\r[Epoch %d/%d] [Batch %d/%d] [G_AB MSE: %f real : %f imag : %f time : %f] [G_BA NLL: %f, miou: %f time : %f] "
                 % (
                     epoch,
                     opt.n_epochs,
@@ -204,8 +205,10 @@ if __name__ == '__main__':
                     loss_AB.item(),
                     loss_r.item(),
                     loss_i.item(),
+                    time_AB,
                     loss_BA.item(),
-                    eval_metrix['miou']
+                    eval_metrix['miou'],
+                    time_BA
                 )
             )
 
@@ -216,10 +219,12 @@ if __name__ == '__main__':
         mean_miou = miou / len(dataloader)
         mean_acc = acc / len(dataloader)
         mean_class_acc = class_acc / len(dataloader)
+        mean_time_AB = np.mean(times_AB)
+        mean_time_BA = np.mean(times_BA)
 
         print(
-            r"Epoch[{:0>3}/{:0>3}]  G_AB_loss:{:.6f} R_loss:{:.6f}  I_loss:{:.6f}  G_BA_loss:{:.6f}  Miou :{:.6f}  Train_acc:{:.6f}  ".format(
-                epoch, Epoch, mean_AB, mean_AB_r, mean_AB_i, mean_BA, mean_miou, mean_acc))
+            r"Epoch[{:0>3}/{:0>3}]  G_AB_loss:{:.6f} R_loss:{:.6f}  I_loss:{:.6f} time:{:.6f}  G_BA_loss:{:.6f}  Miou :{:.6f}  Train_acc:{:.6f}  time:{:.6f}  ".format(
+                epoch, Epoch, mean_AB, mean_AB_r, mean_AB_i,mean_time_AB, mean_BA, mean_miou, mean_acc,mean_time_BA))
 
         # 绘图
         loss_rec["loss_G_AB"].append(mean_AB),
