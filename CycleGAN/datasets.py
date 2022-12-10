@@ -92,6 +92,7 @@ class MaskNfDatasetV2(Dataset):
 
         # 1.读取mask的数据
         mask = np.load(self.files_A[index % len(self.files_A)])
+        mask_temp = t.from_numpy(mask[np.newaxis, :, :]).float()
         mask_label = t.from_numpy(mask).long()
 
         mask_zero = mask ^ 1
@@ -123,12 +124,12 @@ class MaskNfDatasetV2(Dataset):
             nf = np.concatenate((nf_real, nf_imag), axis=0)
             nf = t.from_numpy(nf).float()
             nf = self.transform(nf)
-            return {"A": mask, "B": nf, "C": mask_label}
+            return {"A": mask, "B": nf, "C": mask_label, "D": mask_temp}
         else:
             if self.part == "real":
-                return {"A": mask, "B": self.transform(t.from_numpy(nf_real).float()), "C": mask_label}
+                return {"A": mask, "B": self.transform(t.from_numpy(nf_real).float()), "C": mask_label, "D": mask_temp}
             else:
-                return {"A": mask, "B": self.transform(t.from_numpy(nf_imag).float()), "C": mask_label}
+                return {"A": mask, "B": self.transform(t.from_numpy(nf_imag).float()), "C": mask_label, "D": mask_temp}
 
     def __len__(self):
         return max(len(self.files_A), len(self.files_B))
