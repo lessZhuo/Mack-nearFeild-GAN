@@ -86,7 +86,7 @@ class GeneratorResNet(nn.Module):
         output_channels = output_shape[0]
 
         # Initial convolution block
-        out_features = 64
+        out_features = 32
         model = [
             nn.ReflectionPad2d(1),
             nn.Conv2d(input_channels, 16, 2),
@@ -167,14 +167,14 @@ class GeneratorResNet(nn.Module):
 
         self.model = nn.Sequential(*model)
         self.layer_down_1 = nn.Sequential(*layer_down_1)
-        self.attn1 = Self_Attn(128, 'relu')
+        self.attn1 = Self_Attn(64, 'relu')
         self.layer_down_2 = nn.Sequential(*layer_down_2)
-        self.attn2 = Self_Attn(256, 'relu')
+        self.attn2 = Self_Attn(128, 'relu')
         self.model_res = nn.Sequential(*model_res)
         self.layer_up_1 = nn.Sequential(*layer_up_1)
-        self.attn3 = Self_Attn(128, 'relu')
+        self.attn3 = Self_Attn(64, 'relu')
         self.layer_up_2 = nn.Sequential(*layer_up_2)
-        self.attn4 = Self_Attn(64, 'relu')
+        self.attn4 = Self_Attn(32, 'relu')
         self.model_out = nn.Sequential(*model_out)
 
     def forward(self, x):
@@ -222,15 +222,15 @@ class Discriminator(nn.Module):
 
         self.model_in = nn.Sequential(
             *discriminator_block(channels, 16, normalize=False),
-            *discriminator_block(16, 64),
-            *discriminator_block(64, 256),
+            *discriminator_block(16, 32),
+            *discriminator_block(32, 128),
         )
-        self.attn = Self_Attn(256, 'relu')
+        self.attn = Self_Attn(128, 'relu')
         self.model_out = nn.Sequential(
-            *discriminator_block(256, 512),
+            *discriminator_block(128, 256),
             # nn.ZeroPad2d((1, 0, 1, 0)),
             nn.ReflectionPad2d(1),
-            nn.Conv2d(512, 1, 3)  # , padding=1)
+            nn.Conv2d(256, 1, 3)  # , padding=1)
         )
 
     def forward(self, x):
