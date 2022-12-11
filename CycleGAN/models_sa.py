@@ -113,15 +113,6 @@ class GeneratorResNet(nn.Module):
             nn.ReLU(inplace=True)
         ]
         in_features = out_features
-        #
-        # for _ in range(2):
-        #     out_features *= 2
-        #     model += [
-        #         nn.Conv2d(in_features, out_features, 3, stride=2, padding=1),
-        #         nn.InstanceNorm2d(out_features),
-        #         nn.ReLU(inplace=True),
-        #     ]
-        #     in_features = out_features
 
         # Residual blocks
         model_res = []
@@ -145,16 +136,6 @@ class GeneratorResNet(nn.Module):
             nn.ReLU(inplace=True),
         ]
         in_features = out_features
-
-        # for _ in range(2):
-        #     out_features //= 2
-        #     model += [
-        #         nn.Upsample(scale_factor=2),
-        #         nn.Conv2d(in_features, out_features, 3, stride=1, padding=1),
-        #         nn.InstanceNorm2d(out_features),
-        #         nn.ReLU(inplace=True),
-        #     ]
-        #     in_features = out_features
 
         # Output layer
         model_out = [nn.ReflectionPad2d(1),

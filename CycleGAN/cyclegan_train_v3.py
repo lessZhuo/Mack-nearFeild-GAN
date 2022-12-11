@@ -72,15 +72,14 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 criterion_Vail = torch.nn.MSELoss().to(device)
 
 if cuda:
-    G_AB = G_AB.cuda()
-    G_BA = G_BA.cuda()
-    D_A = D_A.cuda()
-    D_B = D_B.cuda()
-    criterion_GAN.cuda()
-    criterion_cycle.cuda()
-    criterion_identity.cuda()
-    criterion_Vail.cuda()
-    criterion_NLL.cuda()
+    G_AB = G_AB.to('cuda:0')
+    G_BA = G_BA.to('cuda:1')
+    D_A = D_A.to('cuda:0')
+    D_B = D_B.to('cuda:1')
+    # criterion_GAN.cuda()
+    # criterion_cycle.cuda()
+    # criterion_Vail.cuda()
+    # criterion_NLL.cuda()
 
 if opt.epoch != 0:
     # Load pretrained models
@@ -215,18 +214,18 @@ if __name__ == '__main__':
 
             # ----------需要修改验证模型的格式 ----------
             # GAN loss
-            fake_B = G_AB(real_A)
-            loss_GAN_AB = criterion_GAN(D_B(fake_B), valid)
-            fake_A = G_BA(real_B)
-            loss_GAN_BA = criterion_GAN(D_A(fake_A), valid)
+            fake_B = G_AB(real_A.to('cuda:0'))
+            loss_GAN_AB = criterion_GAN(D_B(fake_B.to('cuda:1')), valid.to('cuda:1'))
+            fake_A = G_BA(real_B.to('cuda:1'))
+            loss_GAN_BA = criterion_GAN(D_A(fake_A.to('cuda:0')), valid.to('cuda:0'))
 
             loss_GAN = loss_GAN_AB * proportion + loss_GAN_BA * (1 - proportion)
 
             # Cycle loss
-            recov_A = G_BA(fake_B)
-            loss_cycle_A = criterion_NLL(recov_A, real_A_label)
-            recov_B = G_AB(fake_A)
-            loss_cycle_B = criterion_cycle(recov_B, real_B)
+            recov_A = G_BA(fake_B.to('cuda:1'))
+            loss_cycle_A = criterion_NLL(recov_A, real_A_label.to('cuda:1'))
+            recov_B = G_AB(fake_A.to('cuda:0'))
+            loss_cycle_B = criterion_cycle(recov_B, real_B.to('cuda:0'))
 
             loss_cycle = loss_cycle_B * proportion + loss_cycle_A * (1 - proportion) * lambda_cyc_A
 
@@ -243,10 +242,10 @@ if __name__ == '__main__':
             optimizer_D_A.zero_grad()
 
             # Real loss
-            loss_real = criterion_GAN(D_A(real_A), valid)
+            loss_real = criterion_GAN(D_A(real_A.to('cuda:0')), valid.to('cuda:0'))
             # Fake loss (on batch of previously generated samples)
             fake_A_ = fake_A_buffer.push_and_pop(fake_A)
-            loss_fake = criterion_GAN(D_A(fake_A_.detach()), fake)
+            loss_fake = criterion_GAN(D_A(fake_A_.detach().to('cuda:0')), fake.to('cuda:0'))
             # Total loss
             loss_D_A = (loss_real + loss_fake) / 2
 
@@ -260,10 +259,10 @@ if __name__ == '__main__':
             optimizer_D_B.zero_grad()
 
             # Real loss
-            loss_real = criterion_GAN(D_B(real_B), valid)
+            loss_real = criterion_GAN(D_B(real_B.to('cuda:1')), valid.to('cuda:1'))
             # Fake loss (on batch of previously generated samples)
             fake_B_ = fake_B_buffer.push_and_pop(fake_B)
-            loss_fake = criterion_GAN(D_B(fake_B_.detach()), fake)
+            loss_fake = criterion_GAN(D_B(fake_B_.detach().to('cuda:1')), fake.to('cuda:1'))
             # Total loss
             loss_D_B = (loss_real + loss_fake) / 2
 
@@ -307,13 +306,13 @@ if __name__ == '__main__':
             net_G_AB = G_AB.eval()
             net_G_BA = G_BA.eval()
 
-            fake_B = net_G_AB(real_A)
-            fake_A = net_G_BA(real_B)
+            fake_B = net_G_AB(real_A.to('cuda:0'))
+            fake_A = net_G_BA(real_B.to('cuda:1'))
 
-            loss_AB = criterion_Vail(fake_B, real_B)
+            loss_AB = criterion_Vail(fake_B.to('cuda:0'), real_B.to('cuda:0'))
             train_loss_AB.append(loss_AB.item())
 
-            loss_BA = criterion_NLL(fake_A, real_A_label)
+            loss_BA = criterion_NLL(fake_A.to('cuda:1'), real_A_label.to('cuda:1'))
             train_loss_BA.append(loss_BA.item())
 
             pre_label = fake_A.max(dim=1)[1].data.cpu().numpy()
@@ -360,10 +359,10 @@ if __name__ == '__main__':
             real_B = Variable(sample['B'].to(device))
             real_A_label = Variable(sample['C'].to(device))
 
-            fake_B = net_G_AB_v(real_A)
-            fake_A = net_G_BA_v(real_B)
+            fake_B = net_G_AB_v(real_A.to('cuda:0'))
+            fake_A = net_G_BA_v(real_B.to('cuda:1'))
 
-            loss_G_AB = criterion_Vail(fake_B, real_B)
+            loss_G_AB = criterion_Vail(fake_B.to('cuda:0'), real_B.to('cuda:0'))
             eval_loss_G_AB.append(loss_G_AB.item())
 
             # 评估 mask 的参数 采用miou评估
