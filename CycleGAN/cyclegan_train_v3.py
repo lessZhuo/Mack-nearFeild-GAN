@@ -377,7 +377,7 @@ if __name__ == '__main__':
             eval_miou += eval_metrix['miou']
             eval_class_acc += eval_metrix['class_accuracy']
 
-            loss_G_BA = criterion_NLL(fake_A, real_A_label)
+            loss_G_BA = criterion_NLL(fake_A.to('cuda:0'), real_A_label.to('cuda:0'))
             eval_loss_G_BA.append(loss_G_BA.item())
 
         G_mean = np.mean(G_loss)
