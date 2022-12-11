@@ -215,7 +215,7 @@ if __name__ == '__main__':
             # ----------需要修改验证模型的格式 ----------
             # GAN loss
             fake_B = G_AB(real_A.to('cuda:0'))
-            loss_GAN_AB = criterion_GAN(D_B(fake_B.to('cuda:1').to('cuda:0')), valid.to('cuda:0'))
+            loss_GAN_AB = criterion_GAN(D_B(fake_B.to('cuda:1')).to('cuda:0'), valid.to('cuda:0'))
             fake_A = G_BA(real_B.to('cuda:1'))
             loss_GAN_BA = criterion_GAN(D_A(fake_A.to('cuda:0')), valid.to('cuda:0'))
 
@@ -259,10 +259,10 @@ if __name__ == '__main__':
             optimizer_D_B.zero_grad()
 
             # Real loss
-            loss_real = criterion_GAN(D_B(real_B.to('cuda:0')), valid.to('cuda:0'))
+            loss_real = criterion_GAN(D_B(real_B.to('cuda:1')).to('cuda:0'), valid.to('cuda:0'))
             # Fake loss (on batch of previously generated samples)
             fake_B_ = fake_B_buffer.push_and_pop(fake_B)
-            loss_fake = criterion_GAN(D_B(fake_B_.detach().to('cuda:0')), fake.to('cuda:0'))
+            loss_fake = criterion_GAN(D_B(fake_B_.detach().to('cuda:1')).to('cuda:0'), fake.to('cuda:0'))
             # Total loss
             loss_D_B = (loss_real + loss_fake) / 2
 
