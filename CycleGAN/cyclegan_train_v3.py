@@ -76,10 +76,10 @@ if cuda:
     G_BA = G_BA.to('cuda:1')
     D_A = D_A.to('cuda:0')
     D_B = D_B.to('cuda:1')
-    # criterion_GAN.cuda()
-    # criterion_cycle.cuda()
-    # criterion_Vail.cuda()
-    # criterion_NLL.cuda()
+    criterion_GAN.to('cuda:0')
+    criterion_cycle.to('cuda:0')
+    criterion_Vail.to('cuda:1')
+    criterion_NLL.to('cuda:0')
 
 if opt.epoch != 0:
     # Load pretrained models
@@ -215,7 +215,7 @@ if __name__ == '__main__':
             # ----------需要修改验证模型的格式 ----------
             # GAN loss
             fake_B = G_AB(real_A.to('cuda:0'))
-            loss_GAN_AB = criterion_GAN(D_B(fake_B.to('cuda:1')), valid.to('cuda:1'))
+            loss_GAN_AB = criterion_GAN(D_B(fake_B.to('cuda:1').to('cuda:0')), valid.to('cuda:0'))
             fake_A = G_BA(real_B.to('cuda:1'))
             loss_GAN_BA = criterion_GAN(D_A(fake_A.to('cuda:0')), valid.to('cuda:0'))
 
@@ -223,7 +223,7 @@ if __name__ == '__main__':
 
             # Cycle loss
             recov_A = G_BA(fake_B.to('cuda:1'))
-            loss_cycle_A = criterion_NLL(recov_A, real_A_label.to('cuda:1'))
+            loss_cycle_A = criterion_NLL(recov_A.to('cuda:0'), real_A_label.to('cuda:0'))
             recov_B = G_AB(fake_A.to('cuda:0'))
             loss_cycle_B = criterion_cycle(recov_B, real_B.to('cuda:0'))
 
@@ -259,10 +259,10 @@ if __name__ == '__main__':
             optimizer_D_B.zero_grad()
 
             # Real loss
-            loss_real = criterion_GAN(D_B(real_B.to('cuda:1')), valid.to('cuda:1'))
+            loss_real = criterion_GAN(D_B(real_B.to('cuda:0')), valid.to('cuda:0'))
             # Fake loss (on batch of previously generated samples)
             fake_B_ = fake_B_buffer.push_and_pop(fake_B)
-            loss_fake = criterion_GAN(D_B(fake_B_.detach().to('cuda:1')), fake.to('cuda:1'))
+            loss_fake = criterion_GAN(D_B(fake_B_.detach().to('cuda:0')), fake.to('cuda:0'))
             # Total loss
             loss_D_B = (loss_real + loss_fake) / 2
 
@@ -309,10 +309,10 @@ if __name__ == '__main__':
             fake_B = net_G_AB(real_A.to('cuda:0'))
             fake_A = net_G_BA(real_B.to('cuda:1'))
 
-            loss_AB = criterion_Vail(fake_B.to('cuda:0'), real_B.to('cuda:0'))
+            loss_AB = criterion_Vail(fake_B.to('cuda:1'), real_B.to('cuda:1'))
             train_loss_AB.append(loss_AB.item())
 
-            loss_BA = criterion_NLL(fake_A.to('cuda:1'), real_A_label.to('cuda:1'))
+            loss_BA = criterion_NLL(fake_A.to('cuda:0'), real_A_label.to('cuda:0'))
             train_loss_BA.append(loss_BA.item())
 
             pre_label = fake_A.max(dim=1)[1].data.cpu().numpy()
@@ -362,7 +362,7 @@ if __name__ == '__main__':
             fake_B = net_G_AB_v(real_A.to('cuda:0'))
             fake_A = net_G_BA_v(real_B.to('cuda:1'))
 
-            loss_G_AB = criterion_Vail(fake_B.to('cuda:0'), real_B.to('cuda:0'))
+            loss_G_AB = criterion_Vail(fake_B.to('cuda:1'), real_B.to('cuda:1'))
             eval_loss_G_AB.append(loss_G_AB.item())
 
             # 评估 mask 的参数 采用miou评估
