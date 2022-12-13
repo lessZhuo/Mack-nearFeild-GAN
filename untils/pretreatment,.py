@@ -58,6 +58,10 @@ def read_csv(label, f, l, xy=0):
 
     xx_real = mk[0] * np.cos((mk[4]))
     xx_imag = mk[0] * np.sin((mk[4]))
+    yx_real = mk[1] * np.cos((mk[5]))
+    yx_imag = mk[1] * np.sin((mk[5]))
+    xy_real = mk[2] * np.cos((mk[6]))
+    xy_imag = mk[2] * np.sin((mk[6]))
     yy_real = mk[3] * np.cos((mk[7]))
     yy_imag = mk[3] * np.sin((mk[7]))
     if xy == 0:
@@ -66,8 +70,16 @@ def read_csv(label, f, l, xy=0):
         label = xx_imag
     elif xy == 2:
         label = yy_real
-    else:
+    elif xy == 3:
         label = yy_imag
+    elif xy == 4:
+        label = yx_real
+    elif xy == 5:
+        label = yx_imag
+    elif xy == 6:
+        label = xy_real
+    else:
+        label = xy_imag
 
     return label
 
@@ -135,12 +147,14 @@ if __name__ == "__main__":
 
     masks, labels = zip(*c)
     crop_size = 256
-    dir_train_A = os.path.join(r"..\datasets\crop_%i\new\train\A" % crop_size, )
-    dir_train_B = os.path.join(r"..\datasets\crop_%i\new\train\B" % crop_size, )
-    dir_test_A = os.path.join(r"..\datasets\crop_%i\new\test\A" % crop_size, )
-    dir_test_B = os.path.join(r"..\datasets\crop_%i\new\test\B" % crop_size, )
+    dir_train_A = os.path.join(r"..\datasets\crop_%i\final\train\A" % crop_size, )
+    dir_train_B = os.path.join(r"..\datasets\crop_%i\final\train\B" % crop_size, )
+    dir_vail_A = os.path.join(r"..\datasets\crop_%i\final\vail\A" % crop_size, )
+    dir_vail_B = os.path.join(r"..\datasets\crop_%i\final\vail\B" % crop_size, )
+    dir_test_A = os.path.join(r"..\datasets\crop_%i\final\test\A" % crop_size, )
+    dir_test_B = os.path.join(r"..\datasets\crop_%i\final\test\B" % crop_size, )
     log_list = []
-    log_list += (dir_test_A, dir_train_B, dir_test_A, dir_test_B)
+    log_list += (dir_test_A, dir_train_B, dir_test_A, dir_test_B, dir_vail_A, dir_vail_B)
     for log_dir in log_list:
         print(log_dir)
         if not os.path.exists(log_dir):
@@ -153,15 +167,22 @@ if __name__ == "__main__":
         ran = random.randint(0, 9)
         if ran <= 7:
             file = "train"
-        else:
+        elif ran <= 9:
             file = "test"
+        else:
+            file = "vail"
         f = mask.shape[1]
         l = mask.shape[0]
+
         # print(mask.shape)
         label_xx_real = read_csv(label, f, l, 0)
         label_xx_imag = read_csv(label, f, l, 1)
         label_yy_real = read_csv(label, f, l, 2)
         label_yy_imag = read_csv(label, f, l, 3)
+        label_yx_real = read_csv(label, f, l, 4)
+        label_yx_imag = read_csv(label, f, l, 5)
+        label_xy_real = read_csv(label, f, l, 6)
+        label_xy_imag = read_csv(label, f, l, 7)
         # print(label_xx_real.shape)
 
         # 256*256
@@ -172,6 +193,10 @@ if __name__ == "__main__":
         label_xx_imag = center_crop(label_xx_imag, f, l)
         label_yy_real = center_crop(label_yy_real, f, l)
         label_yy_imag = center_crop(label_yy_imag, f, l)
+        label_yx_real = center_crop(label_yx_real, f, l)
+        label_yx_imag = center_crop(label_yx_imag, f, l)
+        label_xy_real = center_crop(label_xy_real, f, l)
+        label_xy_imag = center_crop(label_xy_imag, f, l)
 
         print(mask.shape)
         print(label_xx_real.shape)
@@ -181,11 +206,11 @@ if __name__ == "__main__":
         # 根据位置进行保存
 
         mask_left_up, mask_left_down, mask_right_up, mask_right_down, mask_mid = corp(mask, crop_size)
-        np.save(r"..\datasets\crop_%i\new\%s\A\RA_Mask_left_up_%i_%i" % (crop_size, file, f, l), mask_left_up)
-        np.save(r"..\datasets\crop_%i\new\%s\A\RA_Mask_left_down_%i_%i" % (crop_size, file, f, l), mask_left_down)
-        np.save(r"..\datasets\crop_%i\new\%s\A\RA_Mask_right_up_%i_%i" % (crop_size, file, f, l), mask_right_up)
-        np.save(r"..\datasets\crop_%i\new\%s\A\RA_Mask_right_down_%i_%i" % (crop_size, file, f, l), mask_right_down)
-        np.save(r"..\datasets\crop_%i\new\%s\A\RA_Mask_mask_mid_%i_%i" % (crop_size, file, f, l), mask_mid)
+        np.save(r"..\datasets\crop_%i\final\%s\A\RA_Mask_left_up_%i_%i" % (crop_size, file, f, l), mask_left_up)
+        np.save(r"..\datasets\crop_%i\final\%s\A\RA_Mask_left_down_%i_%i" % (crop_size, file, f, l), mask_left_down)
+        np.save(r"..\datasets\crop_%i\final\%s\A\RA_Mask_right_up_%i_%i" % (crop_size, file, f, l), mask_right_up)
+        np.save(r"..\datasets\crop_%i\final\%s\A\RA_Mask_right_down_%i_%i" % (crop_size, file, f, l), mask_right_down)
+        np.save(r"..\datasets\crop_%i\final\%s\A\RA_Mask_mask_mid_%i_%i" % (crop_size, file, f, l), mask_mid)
 
         # 切分各种类型的label
         # 根据位置进行保存
@@ -198,22 +223,46 @@ if __name__ == "__main__":
             label_yy_real, crop_size)
         label_yy_imag_left_up, label_yy_imag_left_down, label_yy_imag_right_up, label_yy_imag_right_down, label_yy_imag_mid = corp(
             label_yy_imag, crop_size)
+        label_yx_real_left_up, label_yx_real_left_down, label_yx_real_right_up, label_yx_real_right_down, label_yx_real_mid = corp(
+            label_yx_real, crop_size)
+        label_yx_imag_left_up, label_yx_imag_left_down, label_yx_imag_right_up, label_yx_imag_right_down, label_yx_imag_mid = corp(
+            label_yx_imag, crop_size)
+        label_xy_real_left_up, label_xy_real_left_down, label_xy_real_right_up, label_xy_real_right_down, label_xy_real_mid = corp(
+            label_xy_real, crop_size)
+        label_xy_imag_left_up, label_xy_imag_left_down, label_xy_imag_right_up, label_xy_imag_right_down, label_xy_imag_mid = corp(
+            label_xy_imag, crop_size)
 
-        np.savez(r"..\datasets\crop_%i\new\%s\B\RA_NF_left_up_%i_%i" % (crop_size, file, f, l),
-                 xx_real=label_xx_real_left_up,
-                 xx_imag=label_xx_imag_left_up, yy_real=label_yy_real_left_up, yy_imag=label_yy_imag_left_up)
+        np.savez(r"..\datasets\crop_%i\final\%s\B\RA_NF_left_up_%i_%i" % (crop_size, file, f, l),
+                 xx_real=label_xx_real_left_up, xx_imag=label_xx_imag_left_up, yy_real=label_yy_real_left_up,
+                 yy_imag=label_yy_imag_left_up,
+                 xy_real=label_xy_real_left_up, xy_imag=label_xy_imag_left_up, yx_real=label_yx_real_left_up,
+                 yx_imag=label_yx_imag_left_up
+                 )
 
-        np.savez(r"..\datasets\crop_%i\new\%s\B\RA_NF_left_down_%i_%i" % (crop_size, file, f, l),
-                 xx_real=label_xx_real_left_down,
-                 xx_imag=label_xx_imag_left_down, yy_real=label_yy_real_left_down, yy_imag=label_yy_imag_left_down)
+        np.savez(r"..\datasets\crop_%i\final\%s\B\RA_NF_left_down_%i_%i" % (crop_size, file, f, l),
+                 xx_real=label_xx_real_left_down, xx_imag=label_xx_imag_left_down, yy_real=label_yy_real_left_down,
+                 yy_imag=label_yy_imag_left_down,
+                 xy_real=label_xy_real_left_down, xy_imag=label_xy_imag_left_down, yx_real=label_yx_real_left_down,
+                 yx_imag=label_yx_imag_left_down
+                 )
 
-        np.savez(r"..\datasets\crop_%i\new\%s\B\RA_NF_right_up_%i_%i" % (crop_size, file, f, l),
-                 xx_real=label_xx_real_right_up,
-                 xx_imag=label_xx_imag_right_up, yy_real=label_yy_real_right_up, yy_imag=label_yy_imag_right_up)
+        np.savez(r"..\datasets\crop_%i\final\%s\B\RA_NF_right_up_%i_%i" % (crop_size, file, f, l),
+                 xx_real=label_xx_real_right_up, xx_imag=label_xx_imag_right_up, yy_real=label_yy_real_right_up,
+                 yy_imag=label_yy_imag_right_up,
+                 xy_real=label_xy_real_right_up, xy_imag=label_xy_imag_right_up, yx_real=label_yx_real_right_up,
+                 yx_imag=label_yx_imag_right_up
+                 )
 
-        np.savez(r"..\datasets\crop_%i\new\%s\B\RA_NF_right_down_%i_%i" % (crop_size, file, f, l),
-                 xx_real=label_xx_real_right_down,
-                 xx_imag=label_xx_imag_right_down, yy_real=label_yy_real_right_down, yy_imag=label_yy_imag_right_down)
+        np.savez(r"..\datasets\crop_%i\final\%s\B\RA_NF_right_down_%i_%i" % (crop_size, file, f, l),
+                 xx_real=label_xx_real_right_down, xx_imag=label_xx_imag_right_down, yy_real=label_yy_real_right_down,
+                 yy_imag=label_yy_imag_right_down,
+                 xy_real=label_xy_real_right_down, xy_imag=label_xy_imag_right_down, yx_real=label_yx_real_right_down,
+                 yx_imag=label_yx_imag_right_down
+                 )
 
-        np.savez(r"..\datasets\crop_%i\new\%s\B\RA_NF_mid_%i_%i" % (crop_size, file, f, l), xx_real=label_xx_real_mid,
-                 xx_imag=label_xx_imag_mid, yy_real=label_yy_real_mid, yy_imag=label_yy_imag_mid)
+        np.savez(r"..\datasets\crop_%i\final\%s\B\RA_NF_mid_%i_%i" % (crop_size, file, f, l),
+                 xx_real=label_xx_real_mid, xx_imag=label_xx_imag_mid, yy_real=label_yy_real_mid,
+                 yy_imag=label_yy_imag_mid,
+                 xy_real=label_xy_real_mid, xy_imag=label_xy_imag_mid, yx_real=label_yx_real_mid,
+                 yx_imag=label_yx_imag_mid
+                 )
