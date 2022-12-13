@@ -11,7 +11,7 @@ from torchvision.utils import save_image, make_grid
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torch.autograd import Variable
-from models_sa import *
+from models_sa_v2 import *
 from datasets import *
 from utils import *
 import torch

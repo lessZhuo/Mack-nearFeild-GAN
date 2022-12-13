@@ -116,9 +116,11 @@ class GeneratorResNet(nn.Module):
 
         # Residual blocks
         model_res_1 = [ResidualBlock(out_features)]
-        self.attn2 = Self_Attn(out_features, 'relu')
-        model_res_2 = [ResidualBlock(out_features)]
         self.attn1 = Self_Attn(out_features, 'relu')
+        model_res_2 = [ResidualBlock(out_features)]
+        self.attn2 = Self_Attn(out_features, 'relu')
+        model_res_3 = [ResidualBlock(out_features)]
+        self.attn3 = Self_Attn(out_features, 'relu')
 
         # Upsampling
         out_features //= 2
@@ -152,6 +154,7 @@ class GeneratorResNet(nn.Module):
         self.layer_down_2 = nn.Sequential(*layer_down_2)
         self.model_res_1 = nn.Sequential(*model_res_1)
         self.model_res_2 = nn.Sequential(*model_res_2)
+        self.model_res_3 = nn.Sequential(*model_res_3)
         self.layer_up_1 = nn.Sequential(*layer_up_1)
         self.layer_up_2 = nn.Sequential(*layer_up_2)
         self.model_out = nn.Sequential(*model_out)
@@ -163,8 +166,10 @@ class GeneratorResNet(nn.Module):
         x = self.layer_down_2(x)
         x = self.model_res_1(x)
         x, a1 = self.attn1(x)
-        x = self.model_res_1(x)
+        x = self.model_res_2(x)
         x, a2 = self.attn2(x)
+        x = self.model_res_3(x)
+        x, a3 = self.attn3(x)
         x = self.layer_up_1(x)
         x = self.layer_up_2(x)
         x = self.model_out(x)
@@ -202,16 +207,22 @@ class Discriminator(nn.Module):
             *discriminator_block(channels, 16, normalize=False),
             *discriminator_block(16, 32),
         )
-        self.attn = Self_Attn(32, 'relu')
-        self.model_out = nn.Sequential(
+        # self.attn_1 = Self_Attn(32, 'relu')
+        self.model_mid = nn.Sequential(
             *discriminator_block(32, 64),
+        )
+        self.attn_2 = Self_Attn(64, 'relu')
+        self.model_out = nn.Sequential(
+            *discriminator_block(64, 128),
             # nn.ZeroPad2d((1, 0, 1, 0)),
             nn.ReflectionPad2d(1),
-            nn.Conv2d(64, 1, 3)  # , padding=1)
+            nn.Conv2d(128, 1, 3)  # , padding=1)
         )
 
     def forward(self, x):
         x = self.model_in(x)
-        x, a = self.attn(x)
+        # x, a1 = self.attn_1(x)
+        x = self.model_mid(x)
+        x, a2 = self.attn_2(x)
         x = self.model_out(x)
         return x
