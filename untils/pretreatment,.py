@@ -136,8 +136,8 @@ def corp(data, len):
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-BASE_DIR = r"E:\下载目录\近场数据\RECT_ARRAY_MASK"
-BASE_DIR1 = r"E:\下载目录\近场数据\RECT_ARRAY_NF_x0_y0"
+BASE_DIR = r"G:\近场数据\SQ_ARRAY_MASK"
+BASE_DIR1 = r"G:\近场数据\SQ_ARRAY_NF_x0_y0"
 if __name__ == "__main__":
     masks_path = read_file(BASE_DIR)
     labels_path = read_file(BASE_DIR1)
@@ -206,11 +206,11 @@ if __name__ == "__main__":
         # 根据位置进行保存
 
         mask_left_up, mask_left_down, mask_right_up, mask_right_down, mask_mid = corp(mask, crop_size)
-        np.save(r"..\datasets\crop_%i\final\%s\A\RA_Mask_left_up_%i_%i" % (crop_size, file, f, l), mask_left_up)
-        np.save(r"..\datasets\crop_%i\final\%s\A\RA_Mask_left_down_%i_%i" % (crop_size, file, f, l), mask_left_down)
-        np.save(r"..\datasets\crop_%i\final\%s\A\RA_Mask_right_up_%i_%i" % (crop_size, file, f, l), mask_right_up)
-        np.save(r"..\datasets\crop_%i\final\%s\A\RA_Mask_right_down_%i_%i" % (crop_size, file, f, l), mask_right_down)
-        np.save(r"..\datasets\crop_%i\final\%s\A\RA_Mask_mask_mid_%i_%i" % (crop_size, file, f, l), mask_mid)
+        np.save(r"..\datasets\crop_%i\final\%s\A\SQ_Mask_left_up_%i_%i" % (crop_size, file, f, l), mask_left_up)
+        np.save(r"..\datasets\crop_%i\final\%s\A\SQ_Mask_left_down_%i_%i" % (crop_size, file, f, l), mask_left_down)
+        np.save(r"..\datasets\crop_%i\final\%s\A\SQ_Mask_right_up_%i_%i" % (crop_size, file, f, l), mask_right_up)
+        np.save(r"..\datasets\crop_%i\final\%s\A\SQ_Mask_right_down_%i_%i" % (crop_size, file, f, l), mask_right_down)
+        np.save(r"..\datasets\crop_%i\final\%s\A\SQ_Mask_mask_mid_%i_%i" % (crop_size, file, f, l), mask_mid)
 
         # 切分各种类型的label
         # 根据位置进行保存
@@ -232,35 +232,35 @@ if __name__ == "__main__":
         label_xy_imag_left_up, label_xy_imag_left_down, label_xy_imag_right_up, label_xy_imag_right_down, label_xy_imag_mid = corp(
             label_xy_imag, crop_size)
 
-        np.savez(r"..\datasets\crop_%i\final\%s\B\RA_NF_left_up_%i_%i" % (crop_size, file, f, l),
+        np.savez(r"..\datasets\crop_%i\final\%s\B\SQ_NF_left_up_%i_%i" % (crop_size, file, f, l),
                  xx_real=label_xx_real_left_up, xx_imag=label_xx_imag_left_up, yy_real=label_yy_real_left_up,
                  yy_imag=label_yy_imag_left_up,
                  xy_real=label_xy_real_left_up, xy_imag=label_xy_imag_left_up, yx_real=label_yx_real_left_up,
                  yx_imag=label_yx_imag_left_up
                  )
 
-        np.savez(r"..\datasets\crop_%i\final\%s\B\RA_NF_left_down_%i_%i" % (crop_size, file, f, l),
+        np.savez(r"..\datasets\crop_%i\final\%s\B\SQ_NF_left_down_%i_%i" % (crop_size, file, f, l),
                  xx_real=label_xx_real_left_down, xx_imag=label_xx_imag_left_down, yy_real=label_yy_real_left_down,
                  yy_imag=label_yy_imag_left_down,
                  xy_real=label_xy_real_left_down, xy_imag=label_xy_imag_left_down, yx_real=label_yx_real_left_down,
                  yx_imag=label_yx_imag_left_down
                  )
 
-        np.savez(r"..\datasets\crop_%i\final\%s\B\RA_NF_right_up_%i_%i" % (crop_size, file, f, l),
+        np.savez(r"..\datasets\crop_%i\final\%s\B\SQ_NF_right_up_%i_%i" % (crop_size, file, f, l),
                  xx_real=label_xx_real_right_up, xx_imag=label_xx_imag_right_up, yy_real=label_yy_real_right_up,
                  yy_imag=label_yy_imag_right_up,
                  xy_real=label_xy_real_right_up, xy_imag=label_xy_imag_right_up, yx_real=label_yx_real_right_up,
                  yx_imag=label_yx_imag_right_up
                  )
 
-        np.savez(r"..\datasets\crop_%i\final\%s\B\RA_NF_right_down_%i_%i" % (crop_size, file, f, l),
+        np.savez(r"..\datasets\crop_%i\final\%s\B\SQ_NF_right_down_%i_%i" % (crop_size, file, f, l),
                  xx_real=label_xx_real_right_down, xx_imag=label_xx_imag_right_down, yy_real=label_yy_real_right_down,
                  yy_imag=label_yy_imag_right_down,
                  xy_real=label_xy_real_right_down, xy_imag=label_xy_imag_right_down, yx_real=label_yx_real_right_down,
                  yx_imag=label_yx_imag_right_down
                  )
 
-        np.savez(r"..\datasets\crop_%i\final\%s\B\RA_NF_mid_%i_%i" % (crop_size, file, f, l),
+        np.savez(r"..\datasets\crop_%i\final\%s\B\SQ_NF_mid_%i_%i" % (crop_size, file, f, l),
                  xx_real=label_xx_real_mid, xx_imag=label_xx_imag_mid, yy_real=label_yy_real_mid,
                  yy_imag=label_yy_imag_mid,
                  xy_real=label_xy_real_mid, xy_imag=label_xy_imag_mid, yx_real=label_yx_real_mid,
