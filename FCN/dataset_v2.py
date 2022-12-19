@@ -13,14 +13,11 @@ from torch.autograd import Variable
 
 
 class LoadDataset(Dataset):
-    def __init__(self, root, transforms_=None, mode="train", combine=False, direction="x", part="real"):
+    def __init__(self, root, transforms_=None, mode="train"):
         """para:
             file_path(list): 数据和标签路径,列表元素第一个为图片路径，第二个为csv
         """
         self.transform = transforms.Compose(transforms_)
-        self.combine = combine
-        self.direction = direction
-        self.part = part
         # 获取该文件夹所有符合模式匹配格式的文件，变成list返回
         self.files_A = sorted(glob.glob(os.path.join(root, "%s/A" % mode) + "/*.*"))
         self.files_B = sorted(glob.glob(os.path.join(root, "%s/B" % mode) + "/*.*"))
@@ -37,6 +34,7 @@ class LoadDataset(Dataset):
         near_field = np.load(self.files_B[index % len(self.files_B)])
 
         # 3.读取近场数据
+        print(near_field["xx_real"].shape)
         xx_real = near_field["xx_real"][np.newaxis, :, :]
         xx_imag = near_field["xx_imag"][np.newaxis, :, :]
         yy_real = near_field["yy_real"][np.newaxis, :, :]
@@ -61,19 +59,20 @@ class LoadDataset(Dataset):
 if __name__ == '__main__':
     # transformations
     transforms_ = [
-        transforms.ToTensor(),
+        # transforms.ToTensor(),
         # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
         transforms.Normalize([1], [1]),
     ]
 
     device = t.device('cpu')
-    train = LoadDataset("../datasets/crop_256/final", transforms_=transforms_, combine=False, direction="x", part="imag")
+    train = LoadDataset(r"C:\Users\86155\Documents\WeChat Files\wxid_em9fjmpg9twr11\FileStorage\File\2022-12\crop_128\final",
+                        transforms_=transforms_, mode="train")
     train_data = DataLoader(train, batch_size=1, shuffle=True, num_workers=0)
     for i, sample in enumerate(train_data):
         # 载入数据
-        img_data = Variable(sample['A'].to(device))
-        mmm = Variable(sample['B'].to(device))
-
-        print(mmm)
-
+        mask_source = Variable(sample['A'].to(device))
+        nf = Variable(sample['B'].to(device))
+        mask_label = Variable(sample['C'].to(device))
+        print(nf.shape)
+        print(nf)
         break

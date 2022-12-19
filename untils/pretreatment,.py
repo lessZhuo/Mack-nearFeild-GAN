@@ -126,9 +126,9 @@ def corp(data, len):
     # 2.根据要拆分的数据进行切分
     # 分为5部分，左上，右上，左下，右下
     data_left_up = data[:len, :len]
-    data_left_down = data[len:, :len]
-    data_right_up = data[:len, len:]
-    data_right_down = data[len:, :len:]
+    data_left_down = data[colLength-len:, :len]
+    data_right_up = data[:len, rowLength-len:]
+    data_right_down = data[colLength-len:, rowLength-len:]
     data_mid = data[int(rowLength / 2 - len / 2):int(rowLength / 2 + len / 2),
                int(colLength / 2 - len / 2):int(colLength / 2 + len / 2)]
 
