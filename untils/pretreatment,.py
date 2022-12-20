@@ -146,7 +146,7 @@ if __name__ == "__main__":
     # print(c)
 
     masks, labels = zip(*c)
-    crop_size = 256
+    crop_size = 128
     dir_train_A = os.path.join(r"..\datasets\crop_%i\final\train\A" % crop_size, )
     dir_train_B = os.path.join(r"..\datasets\crop_%i\final\train\B" % crop_size, )
     dir_vail_A = os.path.join(r"..\datasets\crop_%i\final\vail\A" % crop_size, )
@@ -154,7 +154,7 @@ if __name__ == "__main__":
     dir_test_A = os.path.join(r"..\datasets\crop_%i\final\test\A" % crop_size, )
     dir_test_B = os.path.join(r"..\datasets\crop_%i\final\test\B" % crop_size, )
     log_list = []
-    log_list += (dir_test_A, dir_train_B, dir_test_A, dir_test_B, dir_vail_A, dir_vail_B)
+    log_list += (dir_test_A, dir_train_B, dir_train_A, dir_test_B, dir_vail_A, dir_vail_B)
     for log_dir in log_list:
         print(log_dir)
         if not os.path.exists(log_dir):

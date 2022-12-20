@@ -34,7 +34,6 @@ class LoadDataset(Dataset):
         near_field = np.load(self.files_B[index % len(self.files_B)])
 
         # 3.读取近场数据
-        print(near_field["xx_real"].shape)
         xx_real = near_field["xx_real"][np.newaxis, :, :]
         xx_imag = near_field["xx_imag"][np.newaxis, :, :]
         yy_real = near_field["yy_real"][np.newaxis, :, :]
