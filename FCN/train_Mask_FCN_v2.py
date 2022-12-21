@@ -18,7 +18,7 @@ import time
 since = time.time()
 if __name__ == "__main__":
 
-    BASE_DIR = r'../datasets/crop_256/new'
+    BASE_DIR = r'../datasets/crop_128/final'
 
     now_time = datetime.now()
     time_str = datetime.strftime(now_time, '%m-%d_%H-%M-%S')
@@ -27,7 +27,7 @@ if __name__ == "__main__":
         os.makedirs(log_dir)
 
     crop_size = (300, 300)
-    Epoch = 50
+    Epoch = 100
     BATCH_SIZE = 50
     LR = 0.1
     log_interval = 1
@@ -37,7 +37,8 @@ if __name__ == "__main__":
 
     transforms_ = [
         # transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
-        transforms.Normalize(mean=[0.193, 0.195], std=[0.927, 1.378])
+        transforms.Normalize(mean=[0.193, 0.195, 0.193, 0.195, 0.193, 0.195, 0.193, 0.195],
+                             std=[0.927, 1.378, 0.927, 1.378, 0.927, 1.378, 0.927, 1.378])
     ]
 
     # ============================ step 1/5 数据 ============================
@@ -50,8 +51,8 @@ if __name__ == "__main__":
     train_data = DataLoader(Load_train, BATCH_SIZE, num_workers=2)
     val_data = DataLoader(Load_val, 12, num_workers=2)
 
-    bw = False
-    # bw = True
+    # bw = False
+    bw = True
     if bw:
         input_channel = 8
         output_channel = 2
@@ -79,7 +80,7 @@ if __name__ == "__main__":
     loss_rec = {"train": [], "valid": []}
 
     best_acc, best_epoch = 0, 0
-    best_loss = 0.003
+    best_loss = 0.1
     for epoch in range(start_epoch + 1, Epoch):
 
         print('Epoch is [{}/{}]'.format(epoch + 1, Epoch))

@@ -93,8 +93,7 @@ class ModelTrainer(object):
             out = net(img_data)
             if bw:
                 out = F.log_softmax(out, dim=1)
-            print(out.shape)
-            print(img_label.shape)
+
             loss = criterion(out, img_label)
             optimizer.zero_grad()
             loss.backward()

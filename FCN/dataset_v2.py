@@ -64,7 +64,7 @@ if __name__ == '__main__':
     ]
 
     device = t.device('cpu')
-    train = LoadDataset(r"C:\Users\86155\Documents\WeChat Files\wxid_em9fjmpg9twr11\FileStorage\File\2022-12\crop_128\final",
+    train = LoadDataset("../datasets/crop_128/final",
                         transforms_=transforms_, mode="train")
     train_data = DataLoader(train, batch_size=1, shuffle=True, num_workers=0)
     for i, sample in enumerate(train_data):
