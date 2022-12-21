@@ -11,8 +11,8 @@ from torchvision.utils import save_image, make_grid
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torch.autograd import Variable
-from models_sa_v2 import *
-from datasets import *
+from models import *
+from datasets_v2 import *
 from utils import *
 import torch
 from evalution_segmentaion import eval_semantic_segmentation
@@ -22,23 +22,23 @@ os.environ["CUDA_VISIBLE_DEVICES"] = "1,0"
 
 parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
-parser.add_argument("--n_epochs", type=int, default=50, help="number of epochs of training")
+parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
 parser.add_argument("--dataset_name", type=str, default="monet2photo", help="name of the dataset")
-parser.add_argument("--batch_size", type=int, default=2, help="size of the batches")
+parser.add_argument("--batch_size", type=int, default=4, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.0001, help="adam: learning rate")
 parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--decay_epoch", type=int, default=10, help="epoch from which to start lr decay")
 parser.add_argument("--n_cpu", type=int, default=2, help="number of cpu threads to use during batch generation")
-parser.add_argument("--img_height", type=int, default=256, help="size of image height")  # 128
-parser.add_argument("--img_width", type=int, default=256, help="size of image width")  # 128
+parser.add_argument("--img_height", type=int, default=128, help="size of image height")  # 128
+parser.add_argument("--img_width", type=int, default=128, help="size of image width")  # 128
 parser.add_argument("--sample_interval", type=int, default=250, help="interval between saving generator outputs")
 parser.add_argument("--checkpoint_interval", type=int, default=-1, help="interval between saving model checkpoints")
 parser.add_argument("--n_residual_blocks", type=int, default=3, help="number of residual blocks in generator")
 parser.add_argument("--lambda_cyc", type=float, default=10.0, help="cycle loss weight")
 parser.add_argument("--lambda_id", type=float, default=5.0, help="identity loss weight")
 parser.add_argument("--input_channels", type=int, default=2, help="number of input channels")
-parser.add_argument("--output_channels", type=int, default=2, help="number of image channels")
+parser.add_argument("--output_channels", type=int, default=8, help="number of image channels")
 parser.add_argument("--proportion", type=float, default=0.4, help="proportion of A to B loss in total loss ")
 opt = parser.parse_args()
 
@@ -123,27 +123,38 @@ fake_B_buffer = ReplayBuffer()
 image_save_plot = ImagePlotSaveV2(output_shape, input_shape)
 
 # transformations
+# transforms_ = [
+#     transforms.Normalize(mean=[0.193, 0.195], std=[0.927, 1.378])
+# ]
+
 transforms_ = [
-    transforms.Normalize(mean=[0.193, 0.195], std=[0.927, 1.378])
+    # transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
+    transforms.Normalize(mean=[0.193, 0.195, 0.193, 0.195, 0.193, 0.195, 0.193, 0.195],
+                         std=[0.927, 1.378, 0.927, 1.378, 0.927, 1.378, 0.927, 1.378])
 ]
+
+# de_transforms_ = [
+#     # transforms.ToTensor(),
+#     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+#     transforms.Normalize(mean=[-0.2082, -0.1415], std=[1.0787, 0.7257]),
+# ]
 
 de_transforms_ = [
     # transforms.ToTensor(),
     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    transforms.Normalize(mean=[-0.2082, -0.1415], std=[1.0787, 0.7257]),
+    transforms.Normalize(mean=[-0.2082, -0.1415,-0.2082, -0.1415,-0.2082, -0.1415,-0.2082, -0.1415], std=[1.0787, 0.7257,1.0787, 0.7257,1.0787, 0.7257,1.0787, 0.7257]),
 ]
 
 # Training data loader
 dataloader = DataLoader(
-    MaskNfDatasetV2("../datasets/crop_256/new", transforms_=transforms_, combine=True, direction="x"),
+    MaskNfDatasetV2("../datasets/crop_128/final", transforms_=transforms_),
     batch_size=opt.batch_size,
     shuffle=True,
     num_workers=opt.n_cpu,
 )
 # Test data loader
 val_dataloader = DataLoader(
-    MaskNfDatasetV2("../datasets/crop_256/new", transforms_=transforms_, mode="test", combine=True,
-                    direction="x"),
+    MaskNfDatasetV2("../datasets/crop_128/final", transforms_=transforms_, mode="test"),
     batch_size=1,
     shuffle=True,
     num_workers=1,
