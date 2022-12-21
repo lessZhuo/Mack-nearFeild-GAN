@@ -1,12 +1,9 @@
 import numpy as np
+import pandas as pd
 
-data = np.load("D:\dataset\RA_NF_left_up_100_100.npz")
-# print(data.size)
-print(data["xx_real"].shape)
-nf_real = data["xx_real"]
-nf_img = data["xx_imag"]
 
-nf = np.concatenate((nf_real[np.newaxis,:,:], nf_img[np.newaxis,:,:]), axis=0)
-print(nf.shape)
-data = np.load("D:\dataset\A\RA_Mask_left_down_100_100.npy")
-print(data.shape)
+if __name__ == '__main__':
+
+    df = pd.read_excel(open(r'C:\Users\Administrator\Documents\WeChat Files\wxid_em9fjmpg9twr11\FileStorage\File\2022-12\卡游奥特曼橡皮公仔.xlsx','rb'),sheet_name='sku表')
+
+    print(df)
