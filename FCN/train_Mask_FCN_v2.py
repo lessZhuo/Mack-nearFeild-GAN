@@ -7,7 +7,7 @@ from torch.utils.data import DataLoader
 import torch.optim as optim
 from dataset_v2 import LoadDataset
 import FCN
-from train import ModelTrainer
+from train_v2 import ModelTrainer
 from common_tools import plot_line
 import torchvision.transforms as transforms
 
