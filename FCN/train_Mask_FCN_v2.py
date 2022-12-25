@@ -27,7 +27,7 @@ if __name__ == "__main__":
         os.makedirs(log_dir)
 
     crop_size = (300, 300)
-    Epoch = 100
+    Epoch = 200
     BATCH_SIZE = 50
     LR = 0.1
     log_interval = 1
@@ -57,8 +57,8 @@ if __name__ == "__main__":
     train_data = DataLoader(Load_train, BATCH_SIZE, num_workers=2)
     val_data = DataLoader(Load_val, 12, num_workers=2)
 
-    # bw = False
-    bw = True
+    bw = False
+    # bw = True
     if bw:
         input_channel = 8
         output_channel = 2

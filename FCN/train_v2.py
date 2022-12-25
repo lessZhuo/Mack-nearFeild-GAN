@@ -40,7 +40,7 @@ def save_img(mask, near_field, label, epoch, num, log_dir, bw=False):
     nf_yx_r = near_field[0, 6, :, :].cpu().detach().numpy()
     nf_yx_i = near_field[0, 7, :, :].cpu().detach().numpy()
 
-    plt.figure(figsize=(10, 90), dpi=300)
+    plt.figure(figsize=(90, 10), dpi=300)
 
     x1 = plt.subplot(2, 9, 1)
     plt.imshow(mask)
@@ -133,25 +133,25 @@ def save_img(mask, near_field, label, epoch, num, log_dir, bw=False):
         # plt.clim(-1.001, -0.95)
         x15.set_title('out_NF_xy_r')
 
-        x16 = plt.subplot(2, 9, 12)
+        x16 = plt.subplot(2, 9, 16)
         plt.imshow(label_6)
         plt.colorbar(fraction=0.05, pad=0.05)
         # plt.clim(-1.001, -0.95)
         x16.set_title('out_NF_xy_i')
 
-        x17 = plt.subplot(2, 9, 11)
+        x17 = plt.subplot(2, 9, 17)
         plt.imshow(label_7)
         plt.colorbar(fraction=0.05, pad=0.05)
         # plt.clim(-1.001, -0.95)
         x17.set_title('out_NF_yx_r')
 
-        x18 = plt.subplot(2, 9, 12)
+        x18 = plt.subplot(2, 9, 18)
         plt.imshow(label_8)
         plt.colorbar(fraction=0.05, pad=0.05)
         # plt.clim(-1.001, -0.95)
         x18.set_title('out_NF_yx_i')
 
-    plt.subplots_adjust(wspace=0.4, hspace=0.05)
+    plt.subplots_adjust(wspace=0.4, hspace=0.4)
     plt.savefig('%s/%i_%i.png' % (log_dir, epoch, num), bbox_inches='tight')
     plt.close()
 
@@ -177,8 +177,8 @@ class ModelTrainer(object):
             out = net(img_data)
             if bw:
                 out = F.log_softmax(out, dim=1)
-            print(out.shape)
-            print(img_label.shape)
+            # print(out.shape)
+            # print(img_label.shape)
             loss = criterion(out, img_label)
             optimizer.zero_grad()
             loss.backward()
