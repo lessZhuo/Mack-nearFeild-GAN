@@ -136,8 +136,8 @@ def corp(data, len):
 
 
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-BASE_DIR = r"G:\近场数据\SQ_ARRAY_MASK"
-BASE_DIR1 = r"G:\近场数据\SQ_ARRAY_NF_x0_y0"
+BASE_DIR = r"E:\下载目录\近场数据\SQ_ARRAY_MASK"
+BASE_DIR1 = r"E:\下载目录\近场数据\SQ_ARRAY_NF_x0_y0"
 if __name__ == "__main__":
     masks_path = read_file(BASE_DIR)
     labels_path = read_file(BASE_DIR1)
@@ -165,9 +165,9 @@ if __name__ == "__main__":
         print("-----------------分割线---------------------------")
         mask = read_mask(mask)
         ran = random.randint(0, 9)
-        if ran <= 7:
+        if ran <= 6:
             file = "train"
-        elif ran <= 9:
+        elif ran <= 8:
             file = "test"
         else:
             file = "vail"
