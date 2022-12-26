@@ -120,7 +120,7 @@ fake_A_buffer = ReplayBuffer()
 fake_B_buffer = ReplayBuffer()
 
 # save image and plot loss line
-image_save_plot = ImagePlotSaveV2(output_shape, input_shape)
+image_save_plot = ImagePlotSaveV3(output_shape, input_shape)
 
 # transformations
 # transforms_ = [
@@ -131,6 +131,13 @@ transforms_ = [
     # transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
     transforms.Normalize(mean=[0.193, 0.195, 0.193, 0.195, 0.193, 0.195, 0.193, 0.195],
                          std=[0.927, 1.378, 0.927, 1.378, 0.927, 1.378, 0.927, 1.378])
+]
+
+temp_transforms_ = [
+    # transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
+    transforms.Normalize(mean=[0.024178, 0.011692, 0.026204, 0.013938, 0.00000000000022865, 0.00000000000020783,
+                               0.00000000000011487, -0.000000000000089899],
+                         std=[0.12494, 0.11972, 0.13355, 0.13404, 0.00013799, 0.0000403454, 0.000062564, 0.00001534])
 ]
 
 # de_transforms_ = [
