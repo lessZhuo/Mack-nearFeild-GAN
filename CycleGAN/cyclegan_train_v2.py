@@ -24,7 +24,7 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--epoch", type=int, default=0, help="epoch to start training from")
 parser.add_argument("--n_epochs", type=int, default=200, help="number of epochs of training")
 parser.add_argument("--dataset_name", type=str, default="monet2photo", help="name of the dataset")
-parser.add_argument("--batch_size", type=int, default=4, help="size of the batches")
+parser.add_argument("--batch_size", type=int, default=8, help="size of the batches")
 parser.add_argument("--lr", type=float, default=0.0001, help="adam: learning rate")
 parser.add_argument("--b1", type=float, default=0.5, help="adam: decay of first order momentum of gradient")
 parser.add_argument("--b2", type=float, default=0.999, help="adam: decay of first order momentum of gradient")
@@ -127,13 +127,13 @@ image_save_plot = ImagePlotSaveV3(output_shape, input_shape)
 #     transforms.Normalize(mean=[0.193, 0.195], std=[0.927, 1.378])
 # ]
 
-transforms_ = [
-    # transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
-    transforms.Normalize(mean=[0.193, 0.195, 0.193, 0.195, 0.193, 0.195, 0.193, 0.195],
-                         std=[0.927, 1.378, 0.927, 1.378, 0.927, 1.378, 0.927, 1.378])
-]
+# transforms_ = [
+#     # transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
+#     transforms.Normalize(mean=[0.193, 0.195, 0.193, 0.195, 0.193, 0.195, 0.193, 0.195],
+#                          std=[0.927, 1.378, 0.927, 1.378, 0.927, 1.378, 0.927, 1.378])
+# ]
 
-temp_transforms_ = [
+transforms_ = [
     # transforms.Normalize(mean=[0.0062, 0.0048], std=[1.0016, 1.0003])
     transforms.Normalize(mean=[0.024178, 0.011692, 0.026204, 0.013938, 0.00000000000022865, 0.00000000000020783,
                                0.00000000000011487, -0.000000000000089899],
@@ -146,10 +146,18 @@ temp_transforms_ = [
 #     transforms.Normalize(mean=[-0.2082, -0.1415], std=[1.0787, 0.7257]),
 # ]
 
+# de_transforms_ = [
+#     # transforms.ToTensor(),
+#     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
+#     transforms.Normalize(mean=[-0.2082, -0.1415, -0.2082, -0.1415, -0.2082, -0.1415, -0.2082, -0.1415],
+#                          std=[1.0787, 0.7257, 1.0787, 0.7257, 1.0787, 0.7257, 1.0787, 0.7257]),
+# ]
+
 de_transforms_ = [
     # transforms.ToTensor(),
     # transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-    transforms.Normalize(mean=[-0.2082, -0.1415,-0.2082, -0.1415,-0.2082, -0.1415,-0.2082, -0.1415], std=[1.0787, 0.7257,1.0787, 0.7257,1.0787, 0.7257,1.0787, 0.7257]),
+    transforms.Normalize(mean=[-0.2082, -0.1415, -0.2082, -0.1415, -0.2082, -0.1415, -0.2082, -0.1415],
+                         std=[1.0787, 0.7257, 1.0787, 0.7257, 1.0787, 0.7257, 1.0787, 0.7257]),
 ]
 
 # Training data loader
