@@ -35,3 +35,12 @@ if __name__ == '__main__':
     channel_mean /= nb_samples
     channel_std /= nb_samples
     print(channel_mean, channel_std)
+
+    # 这是归一化的 mean 和std
+
+    # 这是反归一化的 mean 和std
+    MEAN = [-mean / std for mean, std in zip(channel_mean, channel_std)]
+    STD = [1 / std for std in channel_std]
+
+    print(MEAN)
+    print(STD)

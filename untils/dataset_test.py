@@ -108,24 +108,11 @@ if __name__ == '__main__':
     channel_std /= nb_samples
     print(channel_mean, channel_std)
 
+    # 这是归一化的 mean 和std
 
-    # nb_samples = len(train_data)
-    # channel_mean = t.zeros(8)
-    # channel_std = t.zeros(8)
-    # for i, sample in enumerate(train_data):
-    #     # 载入数据
-    #
-    #     data = Variable(sample['B'].to(device))
-    #
-    #
-    #     N, C, H, W = data.shape[:4]
-    #     data = data.view(N, C, -1)
-    #     channel_mean += data.mean(2).sum(0)
-    #     channel_std += data.std(2).sum(0)
-    #
-    #
-    #
-    # #获取同一batch的均值和标准差
-    # channel_mean /= nb_samples
-    # channel_std /= nb_samples
-    # print(channel_mean, channel_std)
+    # 这是反归一化的 mean 和std
+    MEAN = [-mean / std for mean, std in zip(channel_mean, channel_std)]
+    STD = [1 / std for std in channel_std]
+
+    print(MEAN)
+    print(STD)
