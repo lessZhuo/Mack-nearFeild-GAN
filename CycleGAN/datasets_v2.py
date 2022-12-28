@@ -40,10 +40,10 @@ class MaskNfDatasetV2(Dataset):
         xx_imag = near_field["xx_imag"][np.newaxis, :, :]
         yy_real = near_field["yy_real"][np.newaxis, :, :]
         yy_imag = near_field["yy_imag"][np.newaxis, :, :]
-        xy_real = near_field["xy_real"][np.newaxis, :, :]
-        xy_imag = near_field["xy_imag"][np.newaxis, :, :]
-        yx_real = near_field["yx_real"][np.newaxis, :, :]
-        yx_imag = near_field["yx_imag"][np.newaxis, :, :]
+        xy_real = near_field["xy_real"][np.newaxis, :, :]*1000
+        xy_imag = near_field["xy_imag"][np.newaxis, :, :]*1000
+        yx_real = near_field["yx_real"][np.newaxis, :, :]*1000
+        yx_imag = near_field["yx_imag"][np.newaxis, :, :]*1000
 
         # 3.1 合并为 8*256*256的输出样式 c*h*w
 
