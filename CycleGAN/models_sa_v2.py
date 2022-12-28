@@ -121,6 +121,11 @@ class GeneratorResNet(nn.Module):
         self.attn2 = Self_Attn(out_features, 'relu')
         model_res_3 = [ResidualBlock(out_features)]
         self.attn3 = Self_Attn(out_features, 'relu')
+        #
+        model_res_4 = [ResidualBlock(out_features)]
+        self.attn4 = Self_Attn(out_features, 'relu')
+        model_res_5 = [ResidualBlock(out_features)]
+        self.attn5 = Self_Attn(out_features, 'relu')
 
         # Upsampling
         out_features //= 2
@@ -155,6 +160,8 @@ class GeneratorResNet(nn.Module):
         self.model_res_1 = nn.Sequential(*model_res_1)
         self.model_res_2 = nn.Sequential(*model_res_2)
         self.model_res_3 = nn.Sequential(*model_res_3)
+        self.model_res_4 = nn.Sequential(*model_res_4)
+        self.model_res_5 = nn.Sequential(*model_res_5)
         self.layer_up_1 = nn.Sequential(*layer_up_1)
         self.layer_up_2 = nn.Sequential(*layer_up_2)
         self.model_out = nn.Sequential(*model_out)
@@ -170,6 +177,10 @@ class GeneratorResNet(nn.Module):
         x, a2 = self.attn2(x)
         x = self.model_res_3(x)
         x, a3 = self.attn3(x)
+        x = self.model_res_4(x)
+        x, a4 = self.attn4(x)
+        x = self.model_res_5(x)
+        x, a5 = self.attn5(x)
         x = self.layer_up_1(x)
         x = self.layer_up_2(x)
         x = self.model_out(x)

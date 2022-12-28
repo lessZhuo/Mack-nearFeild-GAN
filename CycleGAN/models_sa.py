@@ -86,13 +86,13 @@ class GeneratorResNet(nn.Module):
         output_channels = output_shape[0]
 
         # Initial convolution block
-        out_features = 32
+        out_features = 64
         model = [
             nn.ReflectionPad2d(1),
-            nn.Conv2d(input_channels, 16, 2),
-            nn.InstanceNorm2d(16),
+            nn.Conv2d(input_channels, 32, 2),
+            nn.InstanceNorm2d(32),
             nn.ReLU(inplace=True),
-            nn.Conv2d(16, out_features, 2),
+            nn.Conv2d(32, out_features, 2),
             nn.InstanceNorm2d(out_features),
             nn.ReLU(inplace=True),
         ]
@@ -153,14 +153,10 @@ class GeneratorResNet(nn.Module):
 
         self.model = nn.Sequential(*model)
         self.layer_down_1 = nn.Sequential(*layer_down_1)
-
         self.layer_down_2 = nn.Sequential(*layer_down_2)
-
         self.model_res = nn.Sequential(*model_res)
         self.layer_up_1 = nn.Sequential(*layer_up_1)
-
         self.layer_up_2 = nn.Sequential(*layer_up_2)
-
         self.model_out = nn.Sequential(*model_out)
 
     def forward(self, x):
