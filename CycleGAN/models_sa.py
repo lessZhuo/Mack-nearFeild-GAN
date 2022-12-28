@@ -86,7 +86,7 @@ class GeneratorResNet(nn.Module):
         output_channels = output_shape[0]
 
         # Initial convolution block
-        out_features = 64
+        out_features = 32
         model = [
             nn.ReflectionPad2d(1),
             nn.Conv2d(input_channels, 16, 2),
