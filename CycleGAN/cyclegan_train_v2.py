@@ -11,7 +11,7 @@ from torchvision.utils import save_image, make_grid
 from torch.utils.data import DataLoader
 from torchvision import datasets
 from torch.autograd import Variable
-from models import *
+from models_sa import *
 from datasets_v2 import *
 from utils import *
 import torch
@@ -34,7 +34,7 @@ parser.add_argument("--img_height", type=int, default=128, help="size of image h
 parser.add_argument("--img_width", type=int, default=128, help="size of image width")  # 128
 parser.add_argument("--sample_interval", type=int, default=250, help="interval between saving generator outputs")
 parser.add_argument("--checkpoint_interval", type=int, default=-1, help="interval between saving model checkpoints")
-parser.add_argument("--n_residual_blocks", type=int, default=3, help="number of residual blocks in generator")
+parser.add_argument("--n_residual_blocks", type=int, default=5, help="number of residual blocks in generator")
 parser.add_argument("--lambda_cyc", type=float, default=10.0, help="cycle loss weight")
 parser.add_argument("--lambda_id", type=float, default=5.0, help="identity loss weight")
 parser.add_argument("--input_channels", type=int, default=2, help="number of input channels")

@@ -105,6 +105,8 @@ class GeneratorResNet(nn.Module):
             nn.InstanceNorm2d(out_features),
             nn.ReLU(inplace=True)
         ]
+        self.attn1 = Self_Attn(out_features, 'relu')
+
         in_features = out_features
         out_features *= 2
         layer_down_2 = [
@@ -112,6 +114,7 @@ class GeneratorResNet(nn.Module):
             nn.InstanceNorm2d(out_features),
             nn.ReLU(inplace=True)
         ]
+        self.attn2 = Self_Attn(out_features, 'relu')
         in_features = out_features
 
         # Residual blocks
@@ -127,6 +130,7 @@ class GeneratorResNet(nn.Module):
             nn.InstanceNorm2d(out_features),
             nn.ReLU(inplace=True),
         ]
+        self.attn3 = Self_Attn(out_features, 'relu')
         in_features = out_features
         out_features //= 2
         layer_up_2 = [
@@ -135,6 +139,7 @@ class GeneratorResNet(nn.Module):
             nn.InstanceNorm2d(out_features),
             nn.ReLU(inplace=True),
         ]
+        self.attn4 = Self_Attn(out_features, 'relu')
         in_features = out_features
 
         # Output layer
@@ -148,28 +153,28 @@ class GeneratorResNet(nn.Module):
 
         self.model = nn.Sequential(*model)
         self.layer_down_1 = nn.Sequential(*layer_down_1)
-        # self.attn1 = Self_Attn(128, 'relu')
+
         self.layer_down_2 = nn.Sequential(*layer_down_2)
-        self.attn2 = Self_Attn(256, 'relu')
+
         self.model_res = nn.Sequential(*model_res)
         self.layer_up_1 = nn.Sequential(*layer_up_1)
-        self.attn3 = Self_Attn(128, 'relu')
+
         self.layer_up_2 = nn.Sequential(*layer_up_2)
-        # self.attn4 = Self_Attn(64, 'relu')
+
         self.model_out = nn.Sequential(*model_out)
 
     def forward(self, x):
 
         x = self.model(x)
         x = self.layer_down_1(x)
-        # x, a1 = self.attn1(x)
+        x, a1 = self.attn1(x)
         x = self.layer_down_2(x)
         x, a2 = self.attn2(x)
         x = self.model_res(x)
         x = self.layer_up_1(x)
         x, a3 = self.attn3(x)
         x = self.layer_up_2(x)
-        # x, a4 = self.attn4(x)
+        x, a4 = self.attn4(x)
         x = self.model_out(x)
 
         if self.fw:
